@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Roça Barba Tênis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rye&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    :root {
+      --azul-ceu: #0076be;
+      --amarelo-roca: #f8b319;
+      --laranja-alerta: #e85d04;
+      --madeira-escura: #2b1e16;
+      --fundo-pagina: #f0f4f8;
+      --verde-vitoria: #28a745;
+    }
+
+    body { font-family: 'Montserrat', sans-serif; background: var(--fundo-pagina); margin: 0; padding: 12px; color: #333; }
+
+    .header-roca {
+      background: linear-gradient(135deg, #005c97, var(--azul-ceu));
+      border: 4px solid var(--amarelo-roca);
+      border-radius: 16px;
+      padding: 15px 10px;
+      text-align: center;
+      color: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      margin-bottom: 15px;
+    }
+
+    .faixa-amarela {
+      background: var(--amarelo-roca);
+      color: var(--madeira-escura);
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 4px;
+      display: inline-block;
+      font-size: 0.85em;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .titulo-principal {
+      font-family: 'Rye', cursive;
+      font-size: 1.8em;
+      color: #fff;
+      text-shadow: 3px 3px 0px var(--madeira-escura), -2px -2px 0px var(--amarelo-roca);
+      margin: 5px 0;
+      line-height: 1.1;
+    }
+
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 4px;
+      border: none;
+      background: #cbd5e1;
+      color: var(--madeira-escura);
+      font-weight: 800;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+
+    .tab-btn.ativo { background: var(--azul-ceu); color: white; }
+
+    .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
+
+    .placar-box {
+      background: var(--madeira-escura);
+      color: white;
+      border-radius: 12px;
+      padding: 15px;
+      border: 3px solid var(--amarelo-roca);
+      margin: 10px 0;
+    }
+
+    .placar-linha { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
+    .dupla-nome { font-size: 1.1em; font-weight: 800; width: 50%; color: #fff; }
+    .sets-count { font-size: 0.85em; color: var(--amarelo-roca); font-weight: 600; }
+    .historico-pontos { font-size: 0.8em; color: #d1d5db; font-weight: normal; margin-left: 4px; }
+
+    .pontos-display {
+      font-size: 2.2em;
+      font-weight: 800;
+      background: var(--amarelo-roca);
+      color: var(--madeira-escura);
+      padding: 2px 14px;
+      border-radius: 8px;
+      min-width: 45px;
+      text-align: center;
+    }
+
+    .btn-ponto {
+      background: #fff;
+      color: var(--madeira-escura);
+      border: none;
+      font-size: 1.3em;
+      font-weight: 800;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .grafico-container {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 15px;
+      border: 1px solid rgba(248, 179, 25, 0.3);
+    }
+
+    .grafico-wrapper { position: relative; width: 120px; height: 120px; margin: 5px auto; }
+
+    .barra-porcentagem {
+      height: 8px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      margin-top: 8px;
+    }
+
+    .barra-d1 { background: var(--amarelo-roca); transition: width 0.3s ease; }
+    .barra-d2 { background: var(--azul-ceu); transition: width 0.3s ease; }
+
+    .mini-barra-box { margin-top: 6px; padding-top: 4px; border-top: 1px dashed #cbd5e1; }
+    .mini-barra-label { display: flex; justify-content: space-between; font-size: 0.7em; font-weight: 800; color: #64748b; margin-bottom: 2px; }
+    .mini-barra { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; display: flex; }
+    .mini-barra-d1 { background: var(--amarelo-roca); }
+    .mini-barra-d2 { background: var(--azul-ceu); }
+
+    button.btn-acao {
+      background: var(--azul-ceu);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      width: 100%;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    button.btn-secundario { background: #e2e8f0; color: #333; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    button.btn-danger { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+
+    .badge { background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 800; }
+    .badge-aovivo { background: var(--laranja-alerta); color: white; animation: piscar 1.2s infinite; }
+    .badge-finalizado { background: #6c757d; color: white; animation: none !important; }
+    @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+    .alerta-regra { background: #fff3cd; color: #856404; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8em; margin-bottom: 10px; border-left: 4px solid var(--amarelo-roca); }
+    .escondido { display: none !important; }
+    input, select { width: 100%; padding: 10px; margin: 4px 0 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    .item-jogo { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; flex-direction: column; font-size: 0.9em; }
+
+    .arvore-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0; }
+    .fase-coluna { min-width: 230px; display: flex; flex-direction: column; justify-content: flex-start; }
+    .fase-titulo { font-size: 0.8em; font-weight: 800; text-transform: uppercase; color: var(--azul-ceu); margin-bottom: 8px; text-align: center; }
+    .match-box { background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 8px; padding: 8px; margin: 6px 0; font-size: 0.8em; }
+    .match-dupla { display: flex; justify-content: space-between; padding: 4px 6px; border-radius: 4px; }
+    .match-dupla.vencedor { background: var(--verde-vitoria); color: white; font-weight: bold; }
+    .obs-desempate { font-size: 0.68em; color: #d97706; font-weight: 700; margin-top: 4px; text-align: center; }
+
+    .item-historico { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+
+    .area-usuario {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .user-info { display: flex; align-items: center; gap: 8px; font-size: 0.85em; }
+    .user-info img { width: 30px; height: 30px; border-radius: 50%; }
+
+    .item-admin {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CABEÇALHO -->
+  <div class="header-roca">
+    <div class="faixa-amarela">★ 1º CAMPEONATO ★</div>
+    <div class="titulo-principal">BEACH ROÇA<br>BARBA TÊNIS</div>
+  </div>
+
+  <!-- BARRA DE LOGIN -->
+  <div class="area-usuario">
+    <div id="modoAcesso"></div>
+    <div id="containerLoginGoogle">
+      <div id="g_id_onload"
+           data-client_id="{{ google_client_id }}"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin" data-type="standard" data-size="small" data-theme="outline"></div>
+    </div>
+    <div id="containerUserLogado" class="user-info escondido">
+      <img id="imgUser" src="" alt="User">
+      <span id="nomeUser"></span>
+      <button onclick="fazerLogout()" class="btn-secundario" style="padding: 4px 8px; font-size: 0.75em;">Sair</button>
+    </div>
+  </div>
+
+  <!-- NAVEGAÇÃO -->
+  <div class="nav-tabs">
+    <button id="tabAoVivo" onclick="mudarAba('aovivo')" class="tab-btn ativo">🎾 Torneio</button>
+    <button id="tabHistorico" onclick="mudarAba('historico')" class="tab-btn">📜 Histórico</button>
+    <button id="tabAdmins" onclick="mudarAba('admins')" class="tab-btn btn-admin escondido">⚙️ Gerenciar Adms</button>
+  </div>
+
+  <div id="painelCriarBtn" class="btn-admin escondido">
+    <button onclick="iniciarNovoCampeonato()" class="btn-acao" style="margin-bottom: 10px; background: var(--verde-vitoria);">➕ Criar Novo Campeonato</button>
+  </div>
+
+  <!-- FORMULÁRIO DE CRIAÇÃO -->
+  <div id="formCampeonato" class="card escondido">
+    <h3>Cadastrar Novo Torneio</h3>
+    <label>Nome do Torneio:</label>
+    <input type="text" id="nomeTorneio" value="Beach Roça Barba Tênis">
+
+    <label>Categoria:</label>
+    <select id="categoriaTorneio">
+      <option value="Mista">Mista (Saque por Baixo)</option>
+      <option value="Masculina">Masculina</option>
+      <option value="Feminina">Feminina</option>
+    </select>
+
+    <label>Estrutura de Chaves:</label>
+    <select id="formatoChaves">
+      <option value="duas_chaves">Dividir em 2 Chaves (Com Rotação de Descanso)</option>
+      <option value="chave_unica">Chave Única (Todos contra Todos)</option>
+    </select>
+
+    <hr style="border:0; border-top: 1px solid #eee;">
+
+    <h4>Cadastrar Duplas Participantes:</h4>
+    <div id="containerDuplas">
+      <input type="text" placeholder="Dupla 1" class="dupla-input" value="Latronico / Giovana">
+      <input type="text" placeholder="Dupla 2" class="dupla-input" value="Mauricio / Ana">
+      <input type="text" placeholder="Dupla 3" class="dupla-input" value="Ro / Sabrina">
+      <input type="text" placeholder="Dupla 4" class="dupla-input" value="Guga / Laise">
+      <input type="text" placeholder="Dupla 5" class="dupla-input" value="Miguel / Tia Nita">
+      <input type="text" placeholder="Dupla 6" class="dupla-input" value="Darci / Scheila">
+      <input type="text" placeholder="Dupla 7" class="dupla-input" value="Sergio / Josi">
+      <input type="text" placeholder="Dupla 8" class="dupla-input" value="Ciclano / Fulana">
+    </div>
+
+    <button onclick="adicionarCampoDupla()" class="btn-secundario" style="width:100%; margin-top:5px;">+ Adicionar Mais Uma Dupla</button>
+    <br><br>
+    <button onclick="gerarCampeonato()" class="btn-acao">⚡ Gerar Tabela Balanceada</button>
+    <button onclick="cancelarCriacao()" class="btn-secundario" style="width:100%; margin-top: 5px;">Cancelar</button>
+  </div>
+
+  <!-- PAINEL HISTÓRICO -->
+  <div id="painelHistorico" class="card escondido">
+    <h3>📜 Histórico de Torneios Passados</h3>
+    <div id="listaHistorico">Carregando histórico...</div>
+  </div>
+
+  <!-- PAINEL DE ADMS -->
+  <div id="painelAdmins" class="card escondido">
+    <h3>⚙️ Gerenciar Administradores</h3>
+    <p style="font-size: 0.85em; color: #666;">
+      E-mails da lista abaixo têm permissão total para controlar os jogos, alterar placares e criar campeonatos ao logar pelo Google.
+    </p>
+
+    <div style="display: flex; gap: 8px;">
+      <input type="email" id="novoAdminEmail" placeholder="exemplo@gmail.com" style="margin:0;">
+      <button onclick="adicionarAdmin()" class="btn-acao" style="width: 120px; padding: 0;">Adicionar</button>
+    </div>
+
+    <h4 style="margin-top: 15px;">Administradores Atuais:</h4>
+    <div id="listaAdmins">Carregando...</div>
+  </div>
+
+  <!-- PAINEL PRINCIPAL DO TORNEIO -->
+  <div id="painelTorneio" class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <div>
+        <h3 id="displayNomeTorneio" style="margin:0;">Beach Roça Barba Tênis</h3>
+        <span class="badge" id="displayCategoria">Mista</span>
+        <small id="displayData" style="color:#666; display:block; margin-top:4px;"></small>
+      </div>
+      <span class="badge badge-aovivo" id="tagTransmissao">● AO VIVO</span>
+    </div>
+
+    <div id="painelRegras" class="alerta-regra" style="margin-top: 10px;">
+      ⚠️ Saque Misto: Homem deve sacar por baixo da linha do ombro.
+    </div>
+
+    <!-- PLACAR PRINCIPAL -->
+    <div class="placar-box">
+      <div style="display:flex; justify-content:space-between;">
+        <small style="color:var(--amarelo-roca); font-weight: bold;" id="displayGrupoAtual">GRUPO A</small>
+        <small style="color:#fff; opacity:0.8;" id="displayRodadaAtual">Jogo 1</small>
+      </div>
+
+      <div class="placar-linha">
+        <div>
+          <div class="dupla-nome" id="d1Nome">Dupla 1</div>
+          <div class="sets-count">Sets: <b id="d1Sets">0</b> <span class="historico-pontos" id="d1Historico"></span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="alterarPontos(1, -1)" class="btn-ponto btn-admin escondido">-</button>
+          <div class="pontos-display" id="d1Pontos">0</div>
+          <button onclick="alterarPontos(1, 1)" class="btn-ponto btn-admin escondido">+</button>
+        </div>
+      </div>
+
+      <hr style="border:0; border-top: 1px dashed rgba(255,255,255,0.3); margin: 8px 0;">
+
+      <div class="placar-linha">
+        <div>
+          <div class="dupla-nome" id="d2Nome">Dupla 2</div>
+          <div class="sets-count">Sets: <b id="d2Sets">0</b> <span class="historico-pontos" id="d2Historico"></span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="alterarPontos(2, -1)" class="btn-ponto btn-admin escondido">-</button>
+          <div class="pontos-display" id="d2Pontos">0</div>
+          <button onclick="alterarPontos(2, 1)" class="btn-ponto btn-admin escondido">+</button>
+        </div>
+      </div>
+
+      <div class="grafico-container">
+        <div style="text-align: center; font-size: 0.75em; font-weight: 800; color: var(--amarelo-roca); text-transform: uppercase;">
+          📊 Aproveitamento no Jogo Atual
+        </div>
+
+        <div style="display: flex; justify-content: space-around; align-items: center; margin-top: 5px;">
+          <div style="text-align: center; font-size: 0.8em;">
+            <span id="labelPercD1" style="color: var(--amarelo-roca); font-weight: 800;">50%</span>
+          </div>
+
+          <div class="grafico-wrapper">
+            <canvas id="chartAproveitamento"></canvas>
+          </div>
+
+          <div style="text-align: center; font-size: 0.8em;">
+            <span id="labelPercD2" style="color: var(--azul-ceu); font-weight: 800;">50%</span>
+          </div>
+        </div>
+
+        <div class="barra-porcentagem">
+          <div id="barraD1" class="barra-d1" style="width: 50%;"></div>
+          <div id="barraD2" class="barra-d2" style="width: 50%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-admin escondido" style="display: flex; gap: 8px; margin-top: 8px;">
+      <button onclick="mudarJogo(-1)" class="btn-secundario" style="flex:1;">⏮ Jogo Anterior</button>
+      <button onclick="mudarJogo(1)" class="btn-secundario" style="flex:1;">Próximo Jogo ⏭</button>
+    </div>
+
+    <h3 style="margin-top: 25px;">🏆 Árvore e Chaves do Torneio</h3>
+    <div class="arvore-container" id="fluxogramaChaves"></div>
+
+    <h3 style="margin-top: 20px;">Tabela Geral</h3>
+    <div id="listaDeJogos"></div>
+  </div>
+
+  <script>
+    const socket = io();
+    let isAdmin = {{ 'true' if is_admin else 'false' }};
+    let currentUser = {{ user|tojson|safe if user else 'null' }};
+    let chartInstance = null;
+
+    let torneio = {
+      idDb: null,
+      nome: "Beach Roça Barba Tênis",
+      categoria: "Mista",
+      formato: "duas_chaves",
+      dataCriacao: "",
+      jogoAtualIndex: 0,
+      statusTorneio: "Em Andamento",
+      jogos: []
+    };
+
+    socket.on('torneio_atualizado', (dados) => {
+      if (dados && dados.jogos) {
+        torneio = dados;
+        renderizarTudo();
+      }
+    });
+
+    async function inicializar() {
+      atualizarBarraModo();
+      inicializarGrafico();
+      await carregarTorneioMaisRecente();
+    }
+
+    async function handleCredentialResponse(response) {
+      try {
+        const res = await fetch('/api/login-google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: response.credential })
+        });
+        const data = await res.json();
+        if (data.success) {
+          isAdmin = data.isAdmin;
+          currentUser = data.user;
+          atualizarBarraModo();
+          renderizarTudo();
+        }
+      } catch (e) {
+        console.error("Erro ao autenticar:", e);
+      }
+    }
+
+    async function fazerLogout() {
+      await fetch('/api/logout', { method: 'POST' });
+      isAdmin = false;
+      currentUser = null;
+      atualizarBarraModo();
+      mudarAba('aovivo');
+      renderizarTudo();
+    }
+
+    function atualizarBarraModo() {
+      const modoDiv = document.getElementById('modoAcesso');
+      const containerLogin = document.getElementById('containerLoginGoogle');
+      const containerUser = document.getElementById('containerUserLogado');
+      const botoesAdmin = document.querySelectorAll('.btn-admin');
+
+      if (currentUser) {
+        containerLogin.classList.add('escondido');
+        containerUser.classList.remove('escondido');
+        document.getElementById('imgUser').src = currentUser.foto;
+        document.getElementById('nomeUser').innerText = currentUser.nome.split(' ')[0];
+      } else {
+        containerLogin.classList.remove('escondido');
+        containerUser.classList.add('escondido');
+      }
+
+      if (isAdmin) {
+        modoDiv.innerHTML = '<span class="badge" style="background:#28a745; color:white;">Modo Admin</span>';
+        botoesAdmin.forEach(el => el.classList.remove('escondido'));
+      } else {
+        modoDiv.innerHTML = '<span class="badge" style="background:#6c757d; color:white;">Espectador</span>';
+        botoesAdmin.forEach(el => el.classList.add('escondido'));
+      }
+    }
+
+    function mudarAba(aba) {
+      document.getElementById('tabAoVivo').classList.remove('ativo');
+      document.getElementById('tabHistorico').classList.remove('ativo');
+      document.getElementById('tabAdmins').classList.remove('ativo');
+
+      document.getElementById('painelTorneio').classList.add('escondido');
+      document.getElementById('painelHistorico').classList.add('escondido');
+      document.getElementById('painelAdmins').classList.add('escondido');
+      document.getElementById('formCampeonato').classList.add('escondido');
+
+      if (aba === 'aovivo') {
+        document.getElementById('tabAoVivo').classList.add('ativo');
+        document.getElementById('painelTorneio').classList.remove('escondido');
+      } else if (aba === 'historico') {
+        document.getElementById('tabHistorico').classList.add('ativo');
+        document.getElementById('painelHistorico').classList.remove('escondido');
+        carregarHistorico();
+      } else if (aba === 'admins') {
+        document.getElementById('tabAdmins').classList.add('ativo');
+        document.getElementById('painelAdmins').classList.remove('escondido');
+        carregarAdmins();
+      }
+    }
+
+    async function carregarAdmins() {
+      if (!isAdmin) return;
+      const container = document.getElementById('listaAdmins');
+      try {
+        const res = await fetch('/api/admins');
+        const lista = await res.json();
+
+        container.innerHTML = "";
+        lista.forEach(adm => {
+          const div = document.createElement('div');
+          div.className = 'item-admin';
+          div.innerHTML = `
+            <span>📧 <b>${adm.email}</b></span>
+            ${adm.email.toLowerCase() !== 'rogerriomp@gmail.com' ?
+              `<button onclick="removerAdmin(${adm.id})" class="btn-danger">Remover</button>` :
+              '<small style="color:#666;">(Principal)</small>'
+            }
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        container.innerHTML = "<p>Erro ao carregar administradores.</p>";
+      }
+    }
+
+    async function adicionarAdmin() {
+      const emailInput = document.getElementById('novoAdminEmail');
+      const email = emailInput.value.trim();
+
+      if (!email) return alert("Digite um e-mail!");
+
+      try {
+        const res = await fetch('/api/admins', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          emailInput.value = "";
+          carregarAdmins();
+        } else {
+          alert(data.error || "Erro ao adicionar administrador.");
+        }
+      } catch (e) {
+        alert("Erro na requisição.");
+      }
+    }
+
+    async function removerAdmin(id) {
+      if (!confirm("Deseja remover esta permissão de Admin?")) return;
+
+      try {
+        const res = await fetch(`/api/admins/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          carregarAdmins();
+        }
+      } catch (e) {
+        alert("Erro ao remover administrador.");
+      }
+    }
+
+    async function carregarTorneioMaisRecente() {
+      try {
+        const res = await fetch('/api/torneio');
+        const data = await res.json();
+        if (data && data.jogos) {
+          torneio = data;
+          renderizarTudo();
+        } else if (isAdmin) {
+          gerarEstruturaTorneio("duas_chaves", [
+            "Latronico / Giovana", "Mauricio / Ana", "Ro / Sabrina", "Guga / Laise",
+            "Miguel / Tia Nita", "Darci / Scheila", "Sergio / Josi", "Ciclano / Fulana"
+          ]);
+          salvarTorneioBackend(true);
+        }
+      } catch (e) {
+        console.error("Erro ao carregar dados:", e);
+      }
+    }
+
+    async function carregarHistorico() {
+      const container = document.getElementById('listaHistorico');
+      try {
+        const res = await fetch('/api/historico');
+        const lista = await res.json();
+
+        if (!Array.isArray(lista) || lista.length === 0) {
+          container.innerHTML = "<p>Nenhum torneio passado foi encontrado.</p>";
+          return;
+        }
+
+        container.innerHTML = "";
+        lista.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'item-historico';
+          div.innerHTML = `
+            <div>
+              <b>${t.nome}</b> (${t.categoria})<br>
+              <small style="color:#666;">📅 ${t.data || 'Sem data'}</small><br>
+              <small style="color:var(--verde-vitoria);">🏆 Campeão: <b>${t.campeao}</b></small>
+            </div>
+            <button onclick="visualizarTorneioAntigo(${t.id})" class="btn-secundario">Visualizar 👁️</button>
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        container.innerHTML = "<p>Nenhum registro encontrado no histórico.</p>";
+      }
+    }
+
+    async function visualizarTorneioAntigo(id) {
+      try {
+        const res = await fetch(`/api/torneio?id=${id}`);
+        const data = await res.json();
+        if (data) {
+          torneio = data;
+          mudarAba('aovivo');
+          renderizarTudo();
+        }
+      } catch (e) {
+        alert("Erro ao abrir o torneio selecionado.");
+      }
+    }
+
+    function renderizarTudo() {
+      if (!torneio || !torneio.jogos || torneio.jogos.length === 0) return;
+
+      const tagTrans = document.getElementById('tagTransmissao');
+      const jogoAtual = torneio.jogos[torneio.jogoAtualIndex];
+
+      // Atualiza tag do topo dependendo do jogo atual e do status geral
+      const todosFinalizados = torneio.jogos.every(j => j.status === 'finalizado');
+      if (torneio.statusTorneio === 'Finalizado' || todosFinalizados) {
+        tagTrans.className = 'badge badge-finalizado';
+        tagTrans.innerText = '✓ FINALIZADO';
+      } else if (jogoAtual && jogoAtual.status === 'finalizado') {
+        tagTrans.className = 'badge badge-finalizado';
+        tagTrans.innerText = '✓ JOGO FIM';
+      } else {
+        tagTrans.className = 'badge badge-aovivo';
+        tagTrans.innerText = '● AO VIVO';
+      }
+
+      carregarJogoAtual();
+      atualizarClassificacaoESemifinais();
+      renderizarFluxograma();
+      renderizarListaJogos();
+    }
+
+    async function salvarTorneioBackend(isNovo = false) {
+      if (!isAdmin) return;
+
+      try {
+        if (isNovo || !torneio.idDb) {
+          const res = await fetch('/api/torneio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(torneio)
+          });
+          const data = await res.json();
+          torneio.idDb = data.idDb;
+          torneio.dataCriacao = data.dataCriacao;
+        } else {
+          await fetch(`/api/torneio/${torneio.idDb}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(torneio)
+          });
+        }
+      } catch (e) {
+        console.error("Erro ao comunicar com o servidor:", e);
+      }
+    }
+
+    function iniciarNovoCampeonato() {
+      if (!isAdmin) return;
+      document.getElementById('formCampeonato').classList.remove('escondido');
+      document.getElementById('painelTorneio').classList.add('escondido');
+      document.getElementById('painelHistorico').classList.add('escondido');
+      document.getElementById('painelAdmins').classList.add('escondido');
+    }
+
+    function cancelarCriacao() {
+      document.getElementById('formCampeonato').classList.add('escondido');
+      document.getElementById('painelTorneio').classList.remove('escondido');
+    }
+
+    function adicionarCampoDupla() {
+      const container = document.getElementById('containerDuplas');
+      const num = container.querySelectorAll('input').length + 1;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = `Dupla ${num}`;
+      input.className = 'dupla-input';
+      container.appendChild(input);
+    }
+
+    function gerarCampeonato() {
+      if (!isAdmin) return;
+      const nomeInput = document.getElementById('nomeTorneio').value;
+      const categoriaInput = document.getElementById('categoriaTorneio').value;
+      const formatoInput = document.getElementById('formatoChaves').value;
+      const duplasInputs = Array.from(document.querySelectorAll('.dupla-input')).map(i => i.value.trim()).filter(v => v !== "");
+
+      if (duplasInputs.length < 2) {
+        alert("Digite pelo menos 2 duplas!");
+        return;
+      }
+
+      torneio.idDb = null;
+      torneio.nome = nomeInput || "Beach Roça Barba Tênis";
+      torneio.categoria = categoriaInput;
+      torneio.formato = formatoInput;
+      torneio.jogoAtualIndex = 0;
+      torneio.statusTorneio = "Em Andamento";
+
+      gerarEstruturaTorneio(formatoInput, duplasInputs);
+
+      document.getElementById('formCampeonato').classList.add('escondido');
+      mudarAba('aovivo');
+
+      if (torneio.categoria === "Mista") {
+        document.getElementById('painelRegras').classList.remove('escondido');
+      } else {
+        document.getElementById('painelRegras').classList.add('escondido');
+      }
+
+      salvarTorneioBackend(true);
+      renderizarTudo();
+    }
+
+    function gerarEstruturaTorneio(formato, duplas) {
+      torneio.jogos = [];
+
+      if (formato === "duas_chaves") {
+        let metade = Math.ceil(duplas.length / 2);
+        let grupoA = duplas.slice(0, metade);
+        let grupoB = duplas.slice(metade);
+
+        let jogosA = [];
+        for (let i = 0; i < grupoA.length; i++) {
+          for (let j = i + 1; j < grupoA.length; j++) {
+            jogosA.push({ fase: "Grupo A", d1: grupoA[i], d2: grupoA[j] });
+          }
+        }
+
+        let jogosB = [];
+        for (let i = 0; i < grupoB.length; i++) {
+          for (let j = i + 1; j < grupoB.length; j++) {
+            jogosB.push({ fase: "Grupo B", d1: grupoB[i], d2: grupoB[j] });
+          }
+        }
+
+        let max = Math.max(jogosA.length, jogosB.length);
+        let jogosIntercalados = [];
+
+        for (let k = 0; k < max; k++) {
+          if (jogosA[k]) jogosIntercalados.push(jogosA[k]);
+          if (jogosB[k]) jogosIntercalados.push(jogosB[k]);
+        }
+
+        let jogoId = 1;
+        jogosIntercalados.forEach(j => {
+          torneio.jogos.push(criarObjetoJogo(jogoId++, j.fase, j.d1, j.d2));
+        });
+
+        torneio.jogos.push(criarObjetoJogo(jogoId++, "Semifinal 1", "1º Grupo A", "2º Grupo B"));
+        torneio.jogos.push(criarObjetoJogo(jogoId++, "Semifinal 2", "1º Grupo B", "2º Grupo A"));
+        torneio.jogos.push(criarObjetoJogo(jogoId++, "Grande Final", "Vencedor Semi 1", "Vencedor Semi 2"));
+
+      } else {
+        let jogosGerais = [];
+        for (let i = 0; i < duplas.length; i++) {
+          for (let j = i + 1; j < duplas.length; j++) {
+            jogosGerais.push({ fase: "Fase de Grupos", d1: duplas[i], d2: duplas[j] });
+          }
+        }
+
+        let jogoId = 1;
+        jogosGerais.forEach(j => {
+          torneio.jogos.push(criarObjetoJogo(jogoId++, j.fase, j.d1, j.d2));
+        });
+      }
+    }
+
+    function criarObjetoJogo(id, fase, d1, d2) {
+      return {
+        id: id,
+        fase: fase,
+        d1: { nome: d1, pontos: 0, sets: 0, historico: [] },
+        d2: { nome: d2, pontos: 0, sets: 0, historico: [] },
+        status: "pendente",
+        vencedor: null,
+        obsDesempate: ""
+      };
+    }
+
+    function atualizarClassificacaoESemifinais() {
+      if (torneio.formato !== "duas_chaves") return;
+
+      const calcularClassificacaoGrupo = (faseNome) => {
+        let stats = {};
+        let jogosGrupo = torneio.jogos.filter(j => j.fase === faseNome);
+
+        jogosGrupo.forEach(j => {
+          [j.d1, j.d2].forEach(dupla => {
+            if (!stats[dupla.nome]) {
+              stats[dupla.nome] = { nome: dupla.nome, vitorias: 0, setsPro: 0, pontosPro: 0, pontosContra: 0 };
+            }
+          });
+
+          if (j.status === "finalizado") {
+            if (j.d1.sets > j.d2.sets) stats[j.d1.nome].vitorias++;
+            if (j.d2.sets > j.d1.sets) stats[j.d2.nome].vitorias++;
+
+            stats[j.d1.nome].setsPro += j.d1.sets;
+            stats[j.d2.nome].setsPro += j.d2.sets;
+
+            let pts1 = j.d1.historico.reduce((a, b) => a + b, 0);
+            let pts2 = j.d2.historico.reduce((a, b) => a + b, 0);
+
+            stats[j.d1.nome].pontosPro += pts1;
+            stats[j.d1.nome].pontosContra += pts2;
+
+            stats[j.d2.nome].pontosPro += pts2;
+            stats[j.d2.nome].pontosContra += pts1;
+          }
+        });
+
+        let lista = Object.values(stats).map(item => {
+          let totalPontos = item.pontosPro + item.pontosContra;
+          item.aproveitamento = totalPontos > 0 ? (item.pontosPro / totalPontos) : 0;
+          return item;
+        });
+
+        lista.sort((a, b) => {
+          if (b.vitorias !== a.vitorias) return b.vitorias - a.vitorias;
+          if (b.setsPro !== a.setsPro) return b.setsPro - a.setsPro;
+          return b.aproveitamento - a.aproveitamento;
+        });
+
+        let desempateAprov = false;
+        let empateTotal = false;
+
+        if (lista.length >= 2) {
+          if (lista[0].vitorias === lista[1].vitorias && lista[0].setsPro === lista[1].setsPro) {
+            if (lista[0].aproveitamento > lista[1].aproveitamento) {
+              desempateAprov = true;
+            } else if (lista[0].aproveitamento === lista[1].aproveitamento && lista[0].vitorias > 0) {
+              empateTotal = true;
+            }
+          }
+        }
+
+        return { ranking: lista, desempateAprov, empateTotal };
+      };
+
+      let resA = calcularClassificacaoGrupo("Grupo A");
+      let resB = calcularClassificacaoGrupo("Grupo B");
+
+      let semi1 = torneio.jogos.find(j => j.fase === "Semifinal 1");
+      let semi2 = torneio.jogos.find(j => j.fase === "Semifinal 2");
+
+      if (semi1 && resA.ranking[0]) semi1.d1.nome = resA.ranking[0].nome;
+      if (semi1 && resB.ranking[1]) semi1.d2.nome = resB.ranking[1].nome;
+
+      if (semi2 && resB.ranking[0]) semi2.d1.nome = resB.ranking[0].nome;
+      if (semi2 && resA.ranking[1]) semi2.d2.nome = resA.ranking[1].nome;
+
+      if (semi1) {
+        if (resA.empateTotal || resB.empateTotal) {
+          semi1.obsDesempate = "⚠️ Empate Absoluto! Sugerido Jogo Extra de Desempate.";
+        } else if (resA.desempateAprov || resB.desempateAprov) {
+          semi1.obsDesempate = "*Classificado por critério de Desempate (Aproveitamento)";
+        } else {
+          semi1.obsDesempate = "";
+        }
+      }
+
+      if (semi2) {
+        if (resA.empateTotal || resB.empateTotal) {
+          semi2.obsDesempate = "⚠️ Empate Absoluto! Sugerido Jogo Extra de Desempate.";
+        } else if (resA.desempateAprov || resB.desempateAprov) {
+          semi2.obsDesempate = "*Classificado por critério de Desempate (Aproveitamento)";
+        } else {
+          semi2.obsDesempate = "";
+        }
+      }
+    }
+
+    function calcularPorcentagemJogo(j) {
+      let t1 = j.d1.pontos + j.d1.historico.reduce((a, b) => a + b, 0);
+      let t2 = j.d2.pontos + j.d2.historico.reduce((a, b) => a + b, 0);
+      let soma = t1 + t2;
+
+      if (soma === 0) return { p1: 50, p2: 50, soma: 0 };
+      let p1 = Math.round((t1 / soma) * 100);
+      return { p1: p1, p2: 100 - p1, soma: soma };
+    }
+
+    function inicializarGrafico() {
+      const canvas = document.getElementById('chartAproveitamento');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Dupla 1', 'Dupla 2'],
+          datasets: [{
+            data: [50, 50],
+            backgroundColor: ['#f8b319', '#0076be'],
+            borderWidth: 2,
+            borderColor: '#2b1e16'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          cutout: '70%'
+        }
+      });
+    }
+
+    function atualizarAproveitamento(jogo) {
+      let calc = calcularPorcentagemJogo(jogo);
+
+      document.getElementById('labelPercD1').innerText = `${calc.p1}%`;
+      document.getElementById('labelPercD2').innerText = `${calc.p2}%`;
+
+      document.getElementById('barraD1').style.width = `${calc.p1}%`;
+      document.getElementById('barraD2').style.width = `${calc.p2}%`;
+
+      if (chartInstance) {
+        chartInstance.data.datasets[0].data = [calc.soma === 0 ? 50 : calc.p1, calc.soma === 0 ? 50 : calc.p2];
+        chartInstance.update();
+      }
+    }
+
+    function carregarJogoAtual() {
+      const jogo = torneio.jogos[torneio.jogoAtualIndex];
+      if (!jogo) return;
+
+      document.getElementById('displayNomeTorneio').innerText = torneio.nome;
+      document.getElementById('displayCategoria').innerText = torneio.categoria;
+      document.getElementById('displayData').innerText = torneio.dataCriacao ? `📅 ${torneio.dataCriacao}` : '';
+      document.getElementById('displayGrupoAtual').innerText = jogo.fase;
+      document.getElementById('displayRodadaAtual').innerText = `Jogo ${jogo.id}`;
+
+      document.getElementById('d1Nome').innerText = jogo.d1.nome;
+      document.getElementById('d1Pontos').innerText = jogo.d1.pontos;
+      document.getElementById('d1Sets').innerText = jogo.d1.sets;
+      document.getElementById('d1Historico').innerText = jogo.d1.historico.length > 0 ? `(${jogo.d1.historico.join(', ')})` : '';
+
+      document.getElementById('d2Nome').innerText = jogo.d2.nome;
+      document.getElementById('d2Pontos').innerText = jogo.d2.pontos;
+      document.getElementById('d2Sets').innerText = jogo.d2.sets;
+      document.getElementById('d2Historico').innerText = jogo.d2.historico.length > 0 ? `(${jogo.d2.historico.join(', ')})` : '';
+
+      atualizarAproveitamento(jogo);
+    }
+
+    function alterarPontos(dupla, delta) {
+      if (!isAdmin) return;
+      const jogo = torneio.jogos[torneio.jogoAtualIndex];
+      if (jogo.status === "finalizado" && delta > 0) return;
+
+      const d = dupla === 1 ? jogo.d1 : jogo.d2;
+      d.pontos = Math.max(0, d.pontos + delta);
+
+      const p1 = jogo.d1.pontos;
+      const p2 = jogo.d2.pontos;
+
+      if ((p1 >= 10 && (p1 - p2) >= 2) || (p2 >= 10 && (p2 - p1) >= 2)) {
+        jogo.d1.historico.push(p1);
+        jogo.d2.historico.push(p2);
+
+        if (p1 > p2) {
+          jogo.d1.sets++;
+        } else {
+          jogo.d2.sets++;
+        }
+
+        jogo.d1.pontos = 0;
+        jogo.d2.pontos = 0;
+      }
+
+      if (jogo.d1.sets === 2 || jogo.d2.sets === 2) {
+        jogo.status = "finalizado";
+        jogo.vencedor = jogo.d1.sets === 2 ? jogo.d1.nome : jogo.d2.nome;
+
+        if (jogo.fase === "Semifinal 1" || jogo.fase === "Semifinal 2") {
+          let final = torneio.jogos.find(j => j.fase === "Grande Final");
+          if (final) {
+            if (jogo.fase === "Semifinal 1") final.d1.nome = jogo.vencedor;
+            if (jogo.fase === "Semifinal 2") final.d2.nome = jogo.vencedor;
+          }
+        }
+      }
+
+      atualizarClassificacaoESemifinais();
+      renderizarTudo();
+      salvarTorneioBackend();
+    }
+
+    function mudarJogo(delta) {
+      if (!isAdmin) return;
+      const novoIndex = torneio.jogoAtualIndex + delta;
+      if (novoIndex >= 0 && novoIndex < torneio.jogos.length) {
+        torneio.jogoAtualIndex = novoIndex;
+        renderizarTudo();
+        salvarTorneioBackend();
+      }
+    }
+
+    function renderizarFluxograma() {
+      const container = document.getElementById('fluxogramaChaves');
+      container.innerHTML = "";
+
+      const fasesMap = {};
+      torneio.jogos.forEach(j => {
+        if (!fasesMap[j.fase]) fasesMap[j.fase] = [];
+        fasesMap[j.fase].push(j);
+      });
+
+      Object.keys(fasesMap).forEach(faseNome => {
+        let col = document.createElement('div');
+        col.className = 'fase-coluna';
+        col.innerHTML = `<div class="fase-titulo">${faseNome}</div>`;
+
+        fasesMap[faseNome].forEach(j => {
+          let h1Text = j.d1.historico.length > 0 ? `(${j.d1.historico.join(',')})` : '';
+          let h2Text = j.d2.historico.length > 0 ? `(${j.d2.historico.join(',')})` : '';
+          let calc = calcularPorcentagemJogo(j);
+
+          let htmlObs = j.obsDesempate ? `<div class="obs-desempate">${j.obsDesempate}</div>` : '';
+
+          col.innerHTML += `
+            <div class="match-box">
+              <div class="match-dupla ${j.vencedor === j.d1.nome ? 'vencedor' : ''}">
+                <span>${j.d1.nome}</span>
+                <span><b>${j.d1.sets}</b> <small style="font-size:0.85em;">${h1Text}</small></span>
+              </div>
+              <div class="match-dupla ${j.vencedor === j.d2.nome ? 'vencedor' : ''}">
+                <span>${j.d2.nome}</span>
+                <span><b>${j.d2.sets}</b> <small style="font-size:0.85em;">${h2Text}</small></span>
+              </div>
+
+              <div class="mini-barra-box">
+                <div class="mini-barra-label">
+                  <span>Aprov.</span>
+                  <span>${calc.p1}% - ${calc.p2}%</span>
+                </div>
+                <div class="mini-barra">
+                  <div class="mini-barra-d1" style="width: ${calc.p1}%;"></div>
+                  <div class="mini-barra-d2" style="width: ${calc.p2}%;"></div>
+                </div>
+              </div>
+              ${htmlObs}
+            </div>
+          `;
+        });
+
+        container.appendChild(col);
+      });
+    }
+
+    function renderizarListaJogos() {
+      const container = document.getElementById('listaDeJogos');
+      container.innerHTML = "";
+
+      torneio.jogos.forEach((j, index) => {
+        const item = document.createElement('div');
+        item.className = 'item-jogo';
+
+        let statusBadge = `<span class="badge">${j.status}</span>`;
+        if (index === torneio.jogoAtualIndex && j.status !== "finalizado") {
+          statusBadge = `<span class="badge badge-aovivo">AO VIVO</span>`;
+        } else if (j.status === "finalizado") {
+          statusBadge = `<span class="badge" style="background:var(--azul-ceu); color:white;">FIM</span>`;
+        }
+
+        let h1Text = j.d1.historico.length > 0 ? ` (${j.d1.historico.join(',')})` : '';
+        let h2Text = j.d2.historico.length > 0 ? ` (${j.d2.historico.join(',')})` : '';
+        let calc = calcularPorcentagemJogo(j);
+
+        item.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <small style="color:#666;"><b>[${j.fase}]</b> - Jogo ${j.id}</small><br>
+              <b>${j.d1.nome}</b> (${j.d1.sets}${h1Text}) vs <b>${j.d2.nome}</b> (${j.d2.sets}${h2Text})
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+
+          <div class="mini-barra-box">
+            <div class="mini-barra-label">
+              <span>Aproveitamento da Partida</span>
+              <span>${calc.p1}% - ${calc.p2}%</span>
+            </div>
+            <div class="mini-barra">
+              <div class="mini-barra-d1" style="width: ${calc.p1}%;"></div>
+              <div class="mini-barra-d2" style="width: ${calc.p2}%;"></div>
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', inicializar);
+  </script>
+</body>
+</html>

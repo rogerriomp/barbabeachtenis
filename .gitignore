@@ -1,0 +1,13 @@
+# Ocultar o arquivo de variáveis de ambiente secretas
+.env
+
+# Ocultar a pasta do ambiente virtual do Python
+.venv/
+venv/
+ENV/
+
+# Ocultar arquivos temporários do Python e do PyCharm
+__pycache__/
+*.pyc
+.idea/
+.vscode/
