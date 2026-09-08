@@ -3,6 +3,7 @@ flask-socketio
 psycopg2-binary
 google-auth
 google-auth-oauthlib
-eventlet
+gevent
+gevent-websocket
 gunicorn
 python-dotenv

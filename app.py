@@ -3,33 +3,33 @@ import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
-from dotenv import load_dotenv  # <- IMPORTA A BIBLIOTECA
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session
 from flask_socketio import SocketIO, emit
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-# Carrega as variáveis de ambiente do arquivo .env no computador local
 load_dotenv()
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chave_super_secreta_barba_beach_2026')
 
-# Lê as variáveis com valores padrão de segurança/fallback
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chave_padrao_desenvolvimento')
+# SocketIO configurado para gevent (Render)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
+
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 def get_db():
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     return conn
 
+
 def init_db():
     try:
         with get_db() as conn:
             with conn.cursor() as cursor:
-                # Tabela de Torneios com suporte a JSONB nativo do Postgres
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS torneios (
                         id SERIAL PRIMARY KEY,
@@ -42,14 +42,12 @@ def init_db():
                         dados_json JSONB
                     );
                 ''')
-                # Tabela de Administradores
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS administradores (
                         id SERIAL PRIMARY KEY,
                         email VARCHAR(255) UNIQUE NOT NULL
                     );
                 ''')
-                # Inserção do administrador padrão se ainda não existir
                 cursor.execute('''
                     INSERT INTO administradores (email) 
                     VALUES ('rogerriomp@gmail.com')
@@ -208,6 +206,21 @@ def create_torneio():
     if not usuario_is_admin():
         return jsonify({'error': 'Acesso negado'}), 403
 
+    # TRAVA: Impede criação se houver torneio em andamento
+    with get_db() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT id, nome FROM torneios 
+                WHERE campeao = 'Em Andamento' 
+                ORDER BY id DESC LIMIT 1
+            ''')
+            torneio_ativo = cursor.fetchone()
+
+            if torneio_ativo:
+                return jsonify({
+                    'error': f"Já existe um torneio em andamento ('{torneio_ativo['nome']}'). Finalize ou cancele ele antes de criar um novo!"
+                }), 400
+
     torneio_data = request.json
     data_atual = datetime.now().strftime("%d/%m/%Y %H:%M")
     torneio_data['dataCriacao'] = data_atual
@@ -270,6 +283,34 @@ def update_torneio(torneio_id):
 
     socketio.emit('torneio_atualizado', torneio_data)
     return jsonify({'success': True})
+
+
+@app.route('/api/torneio/<int:torneio_id>/cancelar', methods=['PUT'])
+def cancelar_torneio(torneio_id):
+    if not usuario_is_admin():
+        return jsonify({'error': 'Acesso negado'}), 403
+
+    with get_db() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT dados_json FROM torneios WHERE id = %s', (torneio_id,))
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({'error': 'Torneio não encontrado'}), 404
+
+            dados = row['dados_json'] if isinstance(row['dados_json'], dict) else json.loads(row['dados_json'])
+            dados['statusTorneio'] = 'Cancelado'
+            dados['campeao'] = 'Torneio Cancelado'
+            json_str = json.dumps(dados)
+
+            cursor.execute('''
+                UPDATE torneios 
+                SET campeao = 'Torneio Cancelado', dados_json = %s 
+                WHERE id = %s
+            ''', (json_str, torneio_id))
+            conn.commit()
+
+    socketio.emit('torneio_atualizado', dados)
+    return jsonify({'success': True, 'message': 'Torneio cancelado com sucesso'})
 
 
 @socketio.on('connect')

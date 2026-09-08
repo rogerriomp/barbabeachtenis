@@ -227,8 +227,9 @@
     <button id="tabAdmins" onclick="mudarAba('admins')" class="tab-btn btn-admin escondido">⚙️ Gerenciar Adms</button>
   </div>
 
-  <div id="painelCriarBtn" class="btn-admin escondido">
-    <button onclick="iniciarNovoCampeonato()" class="btn-acao" style="margin-bottom: 10px; background: var(--verde-vitoria);">➕ Criar Novo Campeonato</button>
+  <div id="painelCriarBtn" class="btn-admin escondido" style="display: flex; gap: 8px; margin-bottom: 10px;">
+    <button onclick="iniciarNovoCampeonato()" class="btn-acao" style="flex: 2; background: var(--verde-vitoria);">➕ Criar Novo Campeonato</button>
+    <button id="btnCancelarTorneio" onclick="cancelarTorneioAtivo()" class="btn-danger" style="flex: 1; font-weight: 800; font-size: 0.9em;">🚫 Cancelar Torneio</button>
   </div>
 
   <!-- FORMULÁRIO DE CRIAÇÃO -->
@@ -586,7 +587,9 @@
             <div>
               <b>${t.nome}</b> (${t.categoria})<br>
               <small style="color:#666;">📅 ${t.data || 'Sem data'}</small><br>
-              <small style="color:var(--verde-vitoria);">🏆 Campeão: <b>${t.campeao}</b></small>
+              <small style="color:${t.campeao === 'Torneio Cancelado' ? 'var(--laranja-alerta)' : 'var(--verde-vitoria)'};">
+                🏆 Status/Campeão: <b>${t.campeao}</b>
+              </small>
             </div>
             <button onclick="visualizarTorneioAntigo(${t.id})" class="btn-secundario">Visualizar 👁️</button>
           `;
@@ -615,18 +618,35 @@
       if (!torneio || !torneio.jogos || torneio.jogos.length === 0) return;
 
       const tagTrans = document.getElementById('tagTransmissao');
+      const btnCancel = document.getElementById('btnCancelarTorneio');
       const jogoAtual = torneio.jogos[torneio.jogoAtualIndex];
+
+      // Exibição condicional do botão de cancelamento
+      if (btnCancel) {
+        if (isAdmin && torneio.statusTorneio === 'Em Andamento') {
+          btnCancel.style.display = 'inline-block';
+        } else {
+          btnCancel.style.display = 'none';
+        }
+      }
 
       // Atualiza tag do topo dependendo do jogo atual e do status geral
       const todosFinalizados = torneio.jogos.every(j => j.status === 'finalizado');
-      if (torneio.statusTorneio === 'Finalizado' || todosFinalizados) {
+      if (torneio.statusTorneio === 'Torneio Cancelado') {
         tagTrans.className = 'badge badge-finalizado';
+        tagTrans.style.background = '#dc3545';
+        tagTrans.innerText = '🚫 CANCELADO';
+      } else if (torneio.statusTorneio === 'Finalizado' || todosFinalizados) {
+        tagTrans.className = 'badge badge-finalizado';
+        tagTrans.style.background = '#6c757d';
         tagTrans.innerText = '✓ FINALIZADO';
       } else if (jogoAtual && jogoAtual.status === 'finalizado') {
         tagTrans.className = 'badge badge-finalizado';
+        tagTrans.style.background = '#6c757d';
         tagTrans.innerText = '✓ JOGO FIM';
       } else {
         tagTrans.className = 'badge badge-aovivo';
+        tagTrans.style.background = 'var(--laranja-alerta)';
         tagTrans.innerText = '● AO VIVO';
       }
 
@@ -646,18 +666,59 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(torneio)
           });
+
           const data = await res.json();
+
+          // TRAVA CONTRA DUPLICAÇÃO DE TORNEIO
+          if (!res.ok) {
+            alert(data.error || "Não foi possível criar o torneio.");
+            return false;
+          }
+
           torneio.idDb = data.idDb;
           torneio.dataCriacao = data.dataCriacao;
+          return true;
         } else {
           await fetch(`/api/torneio/${torneio.idDb}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(torneio)
           });
+          return true;
         }
       } catch (e) {
         console.error("Erro ao comunicar com o servidor:", e);
+        alert("Erro de conexão com o servidor.");
+        return false;
+      }
+    }
+
+    async function cancelarTorneioAtivo() {
+      if (!torneio || !torneio.idDb) {
+        alert("Nenhum torneio ativo para cancelar.");
+        return;
+      }
+
+      if (!confirm(`Tem certeza que deseja CANCELAR o torneio '${torneio.nome}'?\nEsta ação encerrará o campeonato ativo.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/torneio/${torneio.idDb}/cancelar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert("Torneio cancelado com sucesso!");
+        } else {
+          alert(result.error || "Erro ao cancelar o torneio.");
+        }
+      } catch (error) {
+        console.error("Erro ao cancelar torneio:", error);
+        alert("Erro de conexão com o servidor.");
       }
     }
 
@@ -684,7 +745,7 @@
       container.appendChild(input);
     }
 
-    function gerarCampeonato() {
+    async function gerarCampeonato() {
       if (!isAdmin) return;
       const nomeInput = document.getElementById('nomeTorneio').value;
       const categoriaInput = document.getElementById('categoriaTorneio').value;
@@ -705,6 +766,9 @@
 
       gerarEstruturaTorneio(formatoInput, duplasInputs);
 
+      const salvou = await salvarTorneioBackend(true);
+      if (!salvou) return; // Interrompe se o backend bloqueou por torneio em andamento
+
       document.getElementById('formCampeonato').classList.add('escondido');
       mudarAba('aovivo');
 
@@ -714,7 +778,6 @@
         document.getElementById('painelRegras').classList.add('escondido');
       }
 
-      salvarTorneioBackend(true);
       renderizarTudo();
     }
 
