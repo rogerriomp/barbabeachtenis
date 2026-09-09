@@ -1,6 +1,6 @@
 Flask
 Flask-SocketIO
-eventlet
+simple-websocket
 psycopg2-binary
 python-dotenv
 google-auth
