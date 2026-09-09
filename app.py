@@ -80,12 +80,29 @@ def get_db():
 
 
 def carregar_torneio_cache():
+    """
+    Carrega o torneio ativo em memória. Se o servidor cair e reiniciar,
+    busca no banco qualquer torneio em andamento (não cancelado e não finalizado).
+    """
     global TORNEIO_CACHE
     try:
         with get_db() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute('SELECT * FROM torneios ORDER BY id DESC LIMIT 1')
+                # 1. Prioridade: Buscar torneio ativo/em andamento não finalizado nem cancelado
+                cursor.execute('''
+                    SELECT * FROM torneios 
+                    WHERE (dados_json->>'statusTorneio' NOT IN ('Cancelado', 'Torneio Cancelado', 'Finalizado') 
+                           OR dados_json->>'statusTorneio' IS NULL)
+                      AND (campeao IS NULL OR campeao = 'Em Andamento')
+                    ORDER BY id DESC LIMIT 1
+                ''')
                 row = cursor.fetchone()
+
+                # 2. Se não houver nenhum em andamento, carrega o último torneio do histórico
+                if not row:
+                    cursor.execute('SELECT * FROM torneios ORDER BY id DESC LIMIT 1')
+                    row = cursor.fetchone()
+
                 if row:
                     dados = row['dados_json']
                     torneio = dados if isinstance(dados, dict) else json.loads(dados)
@@ -93,13 +110,20 @@ def carregar_torneio_cache():
                     torneio['dataCriacao'] = row['data_criacao'] or ''
                     torneio['campeao'] = row['campeao'] or 'Em Andamento'
                     TORNEIO_CACHE = torneio
+                    print(f"-> [RECOVERY] Torneio ID {row['id']} ('{row['nome']}') carregado na memória.")
                     return TORNEIO_CACHE
+                else:
+                    TORNEIO_CACHE = None
     except Exception as e:
         print(f"Erro ao carregar cache: {e}")
+        TORNEIO_CACHE = None
     return None
 
 
 def salvar_torneio_db_async(torneio_data):
+    """
+    Persiste assincronamente as alterações do torneio em memória para o PostgreSQL.
+    """
     try:
         torneio_id = torneio_data.get('idDb')
         if not torneio_id:
