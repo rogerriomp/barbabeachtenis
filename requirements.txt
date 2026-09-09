@@ -1,9 +1,7 @@
-flask
-flask-socketio
+Flask
+Flask-SocketIO
+eventlet
 psycopg2-binary
-google-auth
-google-auth-oauthlib
-gevent
-gevent-websocket
-gunicorn
 python-dotenv
+google-auth
+gunicorn
