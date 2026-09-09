@@ -292,11 +292,12 @@ def create_torneio():
     if not usuario_is_admin():
         return jsonify({'error': 'Acesso negado'}), 403
 
+    # Trava rigorosa no Banco de Dados contra múltiplos torneios em andamento
     with get_db() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute('''
                 SELECT id, nome FROM torneios 
-                WHERE campeao = 'Em Andamento' 
+                WHERE (dados_json->>'statusTorneio' = 'Em Andamento' OR campeao = 'Em Andamento')
                 ORDER BY id DESC LIMIT 1
             ''')
             torneio_ativo = cursor.fetchone()
@@ -343,8 +344,15 @@ def update_torneio(torneio_id):
         return jsonify({'error': 'Acesso negado'}), 403
 
     torneio_data = request.json
-    TORNEIO_CACHE = torneio_data
 
+    # Bloqueia atualização de placar se o torneio recebido/no banco estiver cancelado ou finalizado
+    if torneio_data.get('statusTorneio') in ['Cancelado', 'Torneio Cancelado', 'Finalizado']:
+        salvar_torneio_db_async(torneio_data)
+        TORNEIO_CACHE = torneio_data
+        socketio.emit('torneio_atualizado', TORNEIO_CACHE)
+        return jsonify({'success': True})
+
+    TORNEIO_CACHE = torneio_data
     socketio.emit('torneio_atualizado', TORNEIO_CACHE)
     socketio.start_background_task(salvar_torneio_db_async, torneio_data)
     return jsonify({'success': True})
@@ -384,6 +392,9 @@ def cancelar_torneio(torneio_id):
 @socketio.on('atualizar_torneio')
 def handle_atualizar_torneio(data):
     global TORNEIO_CACHE
+    if data and data.get('statusTorneio') in ['Cancelado', 'Torneio Cancelado', 'Finalizado']:
+        return  # Recusa atualizações via WebSocket se o torneio estiver cancelado/finalizado
+
     TORNEIO_CACHE = data
     socketio.emit('torneio_atualizado', TORNEIO_CACHE)
     socketio.start_background_task(salvar_torneio_db_async, data)

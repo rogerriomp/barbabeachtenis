@@ -329,7 +329,7 @@
         </div>
       </div>
 
-      <!-- GRÁFICO DE APROVEITAMENTO E PONTOS TOTAIS DA PARTIDA -->
+      <!-- GRÁFICO DE APROVEITAMENTO -->
       <div class="grafico-container">
         <div style="text-align: center; font-size: 0.75em; font-weight: 800; color: var(--amarelo-roca); text-transform: uppercase;">
           📊 Aproveitamento e Total de Pontos na Partida
@@ -358,7 +358,7 @@
       </div>
     </div>
 
-    <div class="btn-admin escondido" style="display: flex; gap: 8px; margin-top: 8px;">
+    <div id="areaNavegacaoJogos" class="btn-admin escondido" style="display: flex; gap: 8px; margin-top: 8px;">
       <button onclick="mudarJogo(-1)" class="btn-secundario" style="flex:1;">⏮ Jogo Anterior</button>
       <button onclick="mudarJogo(1)" class="btn-secundario" style="flex:1;">Próximo Jogo ⏭</button>
     </div>
@@ -601,20 +601,25 @@
 
       const tagTrans = document.getElementById('tagTransmissao');
       const btnCancel = document.getElementById('btnCancelarTorneio');
+      const navJogos = document.getElementById('areaNavegacaoJogos');
       const jogoAtual = torneio.jogos[torneio.jogoAtualIndex];
 
       const estaCancelado = torneio.statusTorneio === 'Cancelado' || torneio.statusTorneio === 'Torneio Cancelado';
       const estaFinalizado = torneio.statusTorneio === 'Finalizado';
+      const estaEmAndamento = torneio.statusTorneio === 'Em Andamento';
 
       if (btnCancel) {
-        btnCancel.style.display = (isAdmin && !estaCancelado && !estaFinalizado) ? 'inline-block' : 'none';
+        btnCancel.style.display = (isAdmin && estaEmAndamento) ? 'inline-block' : 'none';
       }
 
+      // Bloqueia e esconde os botões de ponto e navegação se o torneio NÃO estiver Em Andamento
       const botoesPonto = document.querySelectorAll('.btn-ponto');
-      if (estaCancelado || estaFinalizado) {
+      if (!estaEmAndamento) {
         botoesPonto.forEach(btn => btn.style.display = 'none');
+        if (navJogos) navJogos.classList.add('escondido');
       } else if (isAdmin) {
         botoesPonto.forEach(btn => btn.style.display = 'inline-block');
+        if (navJogos) navJogos.classList.remove('escondido');
       }
 
       if (estaCancelado) {
@@ -670,6 +675,7 @@
 
     async function cancelarTorneioAtivo() {
       if (!torneio || !torneio.idDb) return alert("Nenhum torneio ativo.");
+      if (torneio.statusTorneio !== 'Em Andamento') return alert("Este torneio já está cancelado ou finalizado.");
       if (!confirm(`Tem certeza que deseja CANCELAR o torneio '${torneio.nome}'?`)) return;
 
       try {
@@ -678,13 +684,16 @@
           torneio.statusTorneio = 'Cancelado';
           torneio.campeao = 'Torneio Cancelado';
           renderizarTudo();
-          alert("Torneio cancelado!");
+          alert("Torneio cancelado com sucesso!");
         }
       } catch (error) { alert("Erro de conexão."); }
     }
 
     function iniciarNovoCampeonato() {
       if (!isAdmin) return;
+      if (torneio && torneio.statusTorneio === 'Em Andamento') {
+        return alert(`Já existe um torneio em andamento ('${torneio.nome}'). Finalize ou cancele ele antes de criar um novo!`);
+      }
       document.getElementById('formCampeonato').classList.remove('escondido');
       document.getElementById('painelTorneio').classList.add('escondido');
     }
@@ -706,6 +715,11 @@
 
     async function gerarCampeonato() {
       if (!isAdmin) return;
+
+      if (torneio && torneio.statusTorneio === 'Em Andamento') {
+        return alert(`Existe um torneio em andamento ('${torneio.nome}'). Cancele-o antes de gerar um novo!`);
+      }
+
       const nomeInput = document.getElementById('nomeTorneio').value;
       const categoriaInput = document.getElementById('categoriaTorneio').value;
       const formatoInput = document.getElementById('formatoChaves').value;
@@ -794,7 +808,6 @@
       document.getElementById('d2Pontos').innerText = jogo.d2.pontos;
       document.getElementById('d2Sets').innerText = jogo.d2.sets;
 
-      // Monta exibições detalhadas por set, ex: Sets: 1 (10-8, 8-10)
       let historicoD1Str = "";
       let historicoD2Str = "";
       if (jogo.d1.historico.length > 0) {
@@ -805,7 +818,6 @@
       document.getElementById('d1Historico').innerText = historicoD1Str;
       document.getElementById('d2Historico').innerText = historicoD2Str;
 
-      // Soma total de pontos acumulados na partida atual
       let ptsTotaisD1 = jogo.d1.historico.reduce((a,b)=>a+b, 0) + jogo.d1.pontos;
       let ptsTotaisD2 = jogo.d2.historico.reduce((a,b)=>a+b, 0) + jogo.d2.pontos;
 
@@ -815,10 +827,9 @@
       atualizarGrafico(ptsTotaisD1, ptsTotaisD2);
     }
 
-    // ALTERAÇÃO DA REGRA: MELHOR DE 3 SETS (10 PONTOS CADA COM DIFERENÇA DE 2)
     function alterarPontos(duplaNum, delta) {
-      if (!isAdmin || enviandoPonto) return;
-      if (torneio.statusTorneio === 'Cancelado' || torneio.statusTorneio === 'Torneio Cancelado' || torneio.statusTorneio === 'Finalizado') return;
+      // Bloqueio estrito de ações em torneios inativos
+      if (!isAdmin || enviandoPonto || torneio.statusTorneio !== 'Em Andamento') return;
 
       const jogo = torneio.jogos[torneio.jogoAtualIndex];
       if (!jogo || jogo.status === 'finalizado') return;
@@ -832,19 +843,15 @@
       d.pontos += delta;
       if (d.pontos < 0) d.pontos = 0;
 
-      // Regra de Vitoria no SET: Atinge 10 pontos e tem pelo menos 2 pontos de vantagem
       if (d.pontos >= 10 && (d.pontos - dOposta.pontos) >= 2) {
         d.sets += 1;
 
-        // Armazena no histórico os pontos do set que acabou de ser encerrado
         jogo.d1.historico.push(jogo.d1.pontos);
         jogo.d2.historico.push(jogo.d2.pontos);
 
-        // Zera os pontos correntes para o próximo set
         jogo.d1.pontos = 0;
         jogo.d2.pontos = 0;
 
-        // Regra de Vitoria na PARTIDA: Quem vencer 2 sets primeiro ganha
         if (d.sets === 2) {
           jogo.status = 'finalizado';
           jogo.vencedor = d.nome;
@@ -856,7 +863,7 @@
     }
 
     function mudarJogo(delta) {
-      if (!isAdmin) return;
+      if (!isAdmin || torneio.statusTorneio !== 'Em Andamento') return;
       let novoIndex = torneio.jogoAtualIndex + delta;
       if (novoIndex >= 0 && novoIndex < torneio.jogos.length) {
         torneio.jogoAtualIndex = novoIndex;
@@ -891,8 +898,6 @@
         }
       });
 
-      // Função de ordenação aplicando os critérios:
-      // 1. Vitórias | 2. Saldo de Sets | 3. Aproveitamento % de Pontos (ptsPro / totalPts)
       const ordenarFn = (a, b) => {
         if (b.v !== a.v) return b.v - a.v;
         let saldoSetsA = a.setsGanhos - a.setsPerdidos;
@@ -910,10 +915,8 @@
       let grupoA = Object.values(tabela).filter(x => x.grupo === 'Grupo A').sort(ordenarFn);
       let grupoB = Object.values(tabela).filter(x => x.grupo === 'Grupo B').sort(ordenarFn);
 
-      // Renderiza as tabelas de classificação
       renderizarTabelaClassificacao(grupoA, grupoB);
 
-      // Atualização dos cruzamentos de semifinal
       if (torneio.formato === "duas_chaves") {
         let semi1 = torneio.jogos.find(j => j.fase === 'Semifinal 1');
         let semi2 = torneio.jogos.find(j => j.fase === 'Semifinal 2');
@@ -946,7 +949,6 @@
       const renderGrupo = (nome, lista) => {
         if (lista.length === 0) return;
 
-        // Verifica se há empate completo nos 3 critérios para sugerir jogo extra
         for (let i = 0; i < lista.length - 1; i++) {
           let t1 = lista[i];
           let t2 = lista[i+1];
