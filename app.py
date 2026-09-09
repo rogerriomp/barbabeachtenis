@@ -1,9 +1,15 @@
 import os
 import json
 import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 from dotenv import load_dotenv
+from contextlib import contextmanager
+
+from gevent import monkey
+monkey.patch_all()
+
 from flask import Flask, render_template, request, jsonify, session
 from flask_socketio import SocketIO, emit
 from google.oauth2 import id_token
@@ -14,20 +20,21 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chave_super_secreta_barba_beach_2026')
 
-# SocketIO configurado para gevent (Render)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
 
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 
-
-def get_db():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
-    return conn
+db_pool = None
+TORNEIO_CACHE = None
 
 
 def init_db():
+    global db_pool
     try:
+        if db_pool is None and DATABASE_URL:
+            db_pool = ThreadedConnectionPool(1, 10, DATABASE_URL)
+
         with get_db() as conn:
             with conn.cursor() as cursor:
                 cursor.execute('''
@@ -55,8 +62,79 @@ def init_db():
                 ''')
                 conn.commit()
         print("-> [Neon PostgreSQL] Conexão e tabelas inicializadas com sucesso!")
+        carregar_torneio_cache()
     except Exception as e:
         print(f"-> [Erro PostgreSQL] Falha ao inicializar o banco: {e}")
+
+
+@contextmanager
+def get_db():
+    global db_pool
+    if db_pool is None and DATABASE_URL:
+        db_pool = ThreadedConnectionPool(1, 10, DATABASE_URL)
+    conn = db_pool.getconn()
+    try:
+        yield conn
+    finally:
+        db_pool.putconn(conn)
+
+
+def carregar_torneio_cache():
+    global TORNEIO_CACHE
+    try:
+        with get_db() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute('SELECT * FROM torneios ORDER BY id DESC LIMIT 1')
+                row = cursor.fetchone()
+                if row:
+                    dados = row['dados_json']
+                    torneio = dados if isinstance(dados, dict) else json.loads(dados)
+                    torneio['idDb'] = row['id']
+                    torneio['dataCriacao'] = row['data_criacao'] or ''
+                    torneio['campeao'] = row['campeao'] or 'Em Andamento'
+                    TORNEIO_CACHE = torneio
+                    return TORNEIO_CACHE
+    except Exception as e:
+        print(f"Erro ao carregar cache: {e}")
+    return None
+
+
+def salvar_torneio_db_async(torneio_data):
+    try:
+        torneio_id = torneio_data.get('idDb')
+        if not torneio_id:
+            return
+
+        status_torneio = torneio_data.get('statusTorneio', 'Em Andamento')
+
+        if status_torneio in ['Cancelado', 'Torneio Cancelado']:
+            campeao = 'Torneio Cancelado'
+        else:
+            campeao = torneio_data.get('campeao', 'Em Andamento')
+            jogos = torneio_data.get('jogos', [])
+            final_match = next((j for j in jogos if j.get('fase') == 'Grande Final'), None)
+
+            if final_match and final_match.get('vencedor'):
+                campeao = final_match['vencedor']
+                torneio_data['statusTorneio'] = 'Finalizado'
+            else:
+                todos_finalizados = len(jogos) > 0 and all(j.get('status') == 'finalizado' for j in jogos)
+                if todos_finalizados:
+                    torneio_data['statusTorneio'] = 'Finalizado'
+                    campeao = jogos[-1].get('vencedor', 'Finalizado')
+
+        json_str = json.dumps(torneio_data)
+
+        with get_db() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('''
+                    UPDATE torneios
+                    SET dados_json = %s, jogo_atual_index = %s, campeao = %s
+                    WHERE id = %s
+                ''', (json_str, torneio_data.get('jogoAtualIndex', 0), campeao, torneio_id))
+                conn.commit()
+    except Exception as e:
+        print(f"Erro no salvamento assíncrono: {e}")
 
 
 init_db()
@@ -70,7 +148,7 @@ def usuario_is_admin(email=None):
 
     try:
         with get_db() as conn:
-            with conn.cursor() as cursor:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute('SELECT id FROM administradores WHERE LOWER(email) = LOWER(%s)', (email,))
                 row = cursor.fetchone()
                 return row is not None
@@ -116,7 +194,7 @@ def get_admins():
         return jsonify({'error': 'Acesso negado'}), 403
 
     with get_db() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute('SELECT id, email FROM administradores ORDER BY id ASC')
             rows = cursor.fetchall()
             admins = [{'id': r['id'], 'email': r['email']} for r in rows]
@@ -156,9 +234,14 @@ def remove_admin(admin_id):
 
 @app.route('/api/torneio', methods=['GET'])
 def get_torneio():
+    global TORNEIO_CACHE
     torneio_id = request.args.get('id')
+
+    if not torneio_id and TORNEIO_CACHE:
+        return jsonify(TORNEIO_CACHE)
+
     with get_db() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             if torneio_id:
                 cursor.execute('SELECT * FROM torneios WHERE id = %s', (torneio_id,))
             else:
@@ -174,6 +257,8 @@ def get_torneio():
         torneio['idDb'] = row['id']
         torneio['dataCriacao'] = row['data_criacao'] or ''
         torneio['campeao'] = row['campeao'] or 'Em Andamento'
+        if not torneio_id:
+            TORNEIO_CACHE = torneio
         return jsonify(torneio)
     except Exception:
         return jsonify(None)
@@ -183,7 +268,7 @@ def get_torneio():
 def get_historico():
     try:
         with get_db() as conn:
-            with conn.cursor() as cursor:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute('SELECT id, nome, categoria, data_criacao, campeao FROM torneios ORDER BY id DESC')
                 rows = cursor.fetchall()
 
@@ -203,12 +288,12 @@ def get_historico():
 
 @app.route('/api/torneio', methods=['POST'])
 def create_torneio():
+    global TORNEIO_CACHE
     if not usuario_is_admin():
         return jsonify({'error': 'Acesso negado'}), 403
 
-    # TRAVA: Impede criação se houver torneio em andamento
     with get_db() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute('''
                 SELECT id, nome FROM torneios 
                 WHERE campeao = 'Em Andamento' 
@@ -227,7 +312,7 @@ def create_torneio():
     torneio_data['statusTorneio'] = 'Em Andamento'
 
     with get_db() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             json_str = json.dumps(torneio_data)
             cursor.execute('''
                 INSERT INTO torneios (nome, categoria, formato, data_criacao, campeao, jogo_atual_index, dados_json)
@@ -246,52 +331,33 @@ def create_torneio():
             conn.commit()
 
     torneio_data['idDb'] = novo_id
-    socketio.emit('torneio_atualizado', torneio_data)
-    return jsonify(torneio_data)
+    TORNEIO_CACHE = torneio_data
+    socketio.emit('torneio_atualizado', TORNEIO_CACHE)
+    return jsonify(TORNEIO_CACHE)
 
 
 @app.route('/api/torneio/<int:torneio_id>', methods=['PUT'])
 def update_torneio(torneio_id):
+    global TORNEIO_CACHE
     if not usuario_is_admin():
         return jsonify({'error': 'Acesso negado'}), 403
 
     torneio_data = request.json
+    TORNEIO_CACHE = torneio_data
 
-    campeao = "Em Andamento"
-    jogos = torneio_data.get('jogos', [])
-    final_match = next((j for j in jogos if j.get('fase') == 'Grande Final'), None)
-
-    if final_match and final_match.get('vencedor'):
-        campeao = final_match['vencedor']
-        torneio_data['statusTorneio'] = 'Finalizado'
-    else:
-        todos_finalizados = len(jogos) > 0 and all(j.get('status') == 'finalizado' for j in jogos)
-        if todos_finalizados:
-            torneio_data['statusTorneio'] = 'Finalizado'
-            campeao = jogos[-1].get('vencedor', 'Finalizado')
-
-    json_str = json.dumps(torneio_data)
-
-    with get_db() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                UPDATE torneios
-                SET dados_json = %s, jogo_atual_index = %s, campeao = %s
-                WHERE id = %s
-            ''', (json_str, torneio_data.get('jogoAtualIndex', 0), campeao, torneio_id))
-            conn.commit()
-
-    socketio.emit('torneio_atualizado', torneio_data)
+    socketio.emit('torneio_atualizado', TORNEIO_CACHE)
+    socketio.start_background_task(salvar_torneio_db_async, torneio_data)
     return jsonify({'success': True})
 
 
 @app.route('/api/torneio/<int:torneio_id>/cancelar', methods=['PUT'])
 def cancelar_torneio(torneio_id):
+    global TORNEIO_CACHE
     if not usuario_is_admin():
         return jsonify({'error': 'Acesso negado'}), 403
 
     with get_db() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute('SELECT dados_json FROM torneios WHERE id = %s', (torneio_id,))
             row = cursor.fetchone()
             if not row:
@@ -300,6 +366,7 @@ def cancelar_torneio(torneio_id):
             dados = row['dados_json'] if isinstance(row['dados_json'], dict) else json.loads(row['dados_json'])
             dados['statusTorneio'] = 'Cancelado'
             dados['campeao'] = 'Torneio Cancelado'
+            dados['idDb'] = torneio_id
             json_str = json.dumps(dados)
 
             cursor.execute('''
@@ -309,26 +376,28 @@ def cancelar_torneio(torneio_id):
             ''', (json_str, torneio_id))
             conn.commit()
 
-    socketio.emit('torneio_atualizado', dados)
+    TORNEIO_CACHE = dados
+    socketio.emit('torneio_atualizado', TORNEIO_CACHE)
     return jsonify({'success': True, 'message': 'Torneio cancelado com sucesso'})
+
+
+@socketio.on('atualizar_torneio')
+def handle_atualizar_torneio(data):
+    global TORNEIO_CACHE
+    TORNEIO_CACHE = data
+    socketio.emit('torneio_atualizado', TORNEIO_CACHE)
+    socketio.start_background_task(salvar_torneio_db_async, data)
 
 
 @socketio.on('connect')
 def handle_connect():
-    try:
-        with get_db() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT * FROM torneios ORDER BY id DESC LIMIT 1')
-                row = cursor.fetchone()
-                if row:
-                    dados = row['dados_json']
-                    torneio = dados if isinstance(dados, dict) else json.loads(dados)
-                    torneio['idDb'] = row['id']
-                    torneio['dataCriacao'] = row['data_criacao'] or ''
-                    torneio['campeao'] = row['campeao'] or 'Em Andamento'
-                    emit('torneio_atualizado', torneio)
-    except Exception:
-        pass
+    global TORNEIO_CACHE
+    if TORNEIO_CACHE:
+        emit('torneio_atualizado', TORNEIO_CACHE)
+    else:
+        carregar_torneio_cache()
+        if TORNEIO_CACHE:
+            emit('torneio_atualizado', TORNEIO_CACHE)
 
 
 if __name__ == '__main__':

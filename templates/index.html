@@ -82,9 +82,9 @@
     }
 
     .placar-linha { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
-    .dupla-nome { font-size: 1.1em; font-weight: 800; width: 50%; color: #fff; }
-    .sets-count { font-size: 0.85em; color: var(--amarelo-roca); font-weight: 600; }
-    .historico-pontos { font-size: 0.8em; color: #d1d5db; font-weight: normal; margin-left: 4px; }
+    .dupla-nome { font-size: 1.05em; font-weight: 800; color: #fff; }
+    .sets-count { font-size: 0.85em; color: var(--amarelo-roca); font-weight: 600; margin-top: 3px; }
+    .historico-pontos { font-size: 0.8em; color: #6ee7b7; font-weight: bold; margin-left: 6px; }
 
     .pontos-display {
       font-size: 2.2em;
@@ -117,7 +117,7 @@
       border: 1px solid rgba(248, 179, 25, 0.3);
     }
 
-    .grafico-wrapper { position: relative; width: 120px; height: 120px; margin: 5px auto; }
+    .grafico-wrapper { position: relative; width: 110px; height: 110px; margin: 5px auto; }
 
     .barra-porcentagem {
       height: 8px;
@@ -130,12 +130,6 @@
 
     .barra-d1 { background: var(--amarelo-roca); transition: width 0.3s ease; }
     .barra-d2 { background: var(--azul-ceu); transition: width 0.3s ease; }
-
-    .mini-barra-box { margin-top: 6px; padding-top: 4px; border-top: 1px dashed #cbd5e1; }
-    .mini-barra-label { display: flex; justify-content: space-between; font-size: 0.7em; font-weight: 800; color: #64748b; margin-bottom: 2px; }
-    .mini-barra { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; display: flex; }
-    .mini-barra-d1 { background: var(--amarelo-roca); }
-    .mini-barra-d2 { background: var(--azul-ceu); }
 
     button.btn-acao {
       background: var(--azul-ceu);
@@ -158,9 +152,11 @@
     @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
     .alerta-regra { background: #fff3cd; color: #856404; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8em; margin-bottom: 10px; border-left: 4px solid var(--amarelo-roca); }
+    .alerta-desempate { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.85em; margin-bottom: 12px; border-left: 4px solid #dc3545; }
+
     .escondido { display: none !important; }
     input, select { width: 100%; padding: 10px; margin: 4px 0 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-    .item-jogo { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; flex-direction: column; font-size: 0.9em; }
+    .item-jogo { padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; flex-direction: column; font-size: 0.88em; }
 
     .arvore-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0; }
     .fase-coluna { min-width: 230px; display: flex; flex-direction: column; justify-content: flex-start; }
@@ -168,9 +164,6 @@
     .match-box { background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 8px; padding: 8px; margin: 6px 0; font-size: 0.8em; }
     .match-dupla { display: flex; justify-content: space-between; padding: 4px 6px; border-radius: 4px; }
     .match-dupla.vencedor { background: var(--verde-vitoria); color: white; font-weight: bold; }
-    .obs-desempate { font-size: 0.68em; color: #d97706; font-weight: 700; margin-top: 4px; text-align: center; }
-
-    .item-historico { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
 
     .area-usuario {
       display: flex;
@@ -185,13 +178,9 @@
     .user-info { display: flex; align-items: center; gap: 8px; font-size: 0.85em; }
     .user-info img { width: 30px; height: 30px; border-radius: 50%; }
 
-    .item-admin {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-    }
+    .tabela-classificacao { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 8px; }
+    .tabela-classificacao th, .tabela-classificacao td { border: 1px solid #e2e8f0; padding: 6px; text-align: center; }
+    .tabela-classificacao th { background: #f1f5f9; font-weight: 800; }
   </style>
 </head>
 <body>
@@ -280,15 +269,10 @@
   <!-- PAINEL DE ADMS -->
   <div id="painelAdmins" class="card escondido">
     <h3>⚙️ Gerenciar Administradores</h3>
-    <p style="font-size: 0.85em; color: #666;">
-      E-mails da lista abaixo têm permissão total para controlar os jogos, alterar placares e criar campeonatos ao logar pelo Google.
-    </p>
-
     <div style="display: flex; gap: 8px;">
       <input type="email" id="novoAdminEmail" placeholder="exemplo@gmail.com" style="margin:0;">
       <button onclick="adicionarAdmin()" class="btn-acao" style="width: 120px; padding: 0;">Adicionar</button>
     </div>
-
     <h4 style="margin-top: 15px;">Administradores Atuais:</h4>
     <div id="listaAdmins">Carregando...</div>
   </div>
@@ -305,8 +289,10 @@
     </div>
 
     <div id="painelRegras" class="alerta-regra" style="margin-top: 10px;">
-      ⚠️ Saque Misto: Homem deve sacar por baixo da linha do ombro.
+      🎾 Regra do Torneio: Melhores de 3 Sets até 10 pontos (diferença mínima de 2). Saque por baixo na Mista.
     </div>
+
+    <div id="alertaDesempateExtra" class="alerta-desempate escondido"></div>
 
     <!-- PLACAR PRINCIPAL -->
     <div class="placar-box">
@@ -315,40 +301,44 @@
         <small style="color:#fff; opacity:0.8;" id="displayRodadaAtual">Jogo 1</small>
       </div>
 
+      <!-- DUPLA 1 -->
       <div class="placar-linha">
         <div>
           <div class="dupla-nome" id="d1Nome">Dupla 1</div>
-          <div class="sets-count">Sets: <b id="d1Sets">0</b> <span class="historico-pontos" id="d1Historico"></span></div>
+          <div class="sets-count">Sets Vencidos: <b id="d1Sets" style="font-size:1.1em; color:var(--amarelo-roca);">0</b> <span class="historico-pontos" id="d1Historico"></span></div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button onclick="alterarPontos(1, -1)" class="btn-ponto btn-admin escondido">-</button>
+          <button id="btnD1Menos" onclick="alterarPontos(1, -1)" class="btn-ponto btn-admin escondido">-</button>
           <div class="pontos-display" id="d1Pontos">0</div>
-          <button onclick="alterarPontos(1, 1)" class="btn-ponto btn-admin escondido">+</button>
+          <button id="btnD1Mais" onclick="alterarPontos(1, 1)" class="btn-ponto btn-admin escondido">+</button>
         </div>
       </div>
 
       <hr style="border:0; border-top: 1px dashed rgba(255,255,255,0.3); margin: 8px 0;">
 
+      <!-- DUPLA 2 -->
       <div class="placar-linha">
         <div>
           <div class="dupla-nome" id="d2Nome">Dupla 2</div>
-          <div class="sets-count">Sets: <b id="d2Sets">0</b> <span class="historico-pontos" id="d2Historico"></span></div>
+          <div class="sets-count">Sets Vencidos: <b id="d2Sets" style="font-size:1.1em; color:var(--amarelo-roca);">0</b> <span class="historico-pontos" id="d2Historico"></span></div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button onclick="alterarPontos(2, -1)" class="btn-ponto btn-admin escondido">-</button>
+          <button id="btnD2Menos" onclick="alterarPontos(2, -1)" class="btn-ponto btn-admin escondido">-</button>
           <div class="pontos-display" id="d2Pontos">0</div>
-          <button onclick="alterarPontos(2, 1)" class="btn-ponto btn-admin escondido">+</button>
+          <button id="btnD2Mais" onclick="alterarPontos(2, 1)" class="btn-ponto btn-admin escondido">+</button>
         </div>
       </div>
 
+      <!-- GRÁFICO DE APROVEITAMENTO E PONTOS TOTAIS DA PARTIDA -->
       <div class="grafico-container">
         <div style="text-align: center; font-size: 0.75em; font-weight: 800; color: var(--amarelo-roca); text-transform: uppercase;">
-          📊 Aproveitamento no Jogo Atual
+          📊 Aproveitamento e Total de Pontos na Partida
         </div>
 
         <div style="display: flex; justify-content: space-around; align-items: center; margin-top: 5px;">
           <div style="text-align: center; font-size: 0.8em;">
-            <span id="labelPercD1" style="color: var(--amarelo-roca); font-weight: 800;">50%</span>
+            <div id="labelPercD1" style="color: var(--amarelo-roca); font-weight: 800;">50%</div>
+            <small style="color:#aaa;" id="labelPtsTotaisD1">0 pts</small>
           </div>
 
           <div class="grafico-wrapper">
@@ -356,7 +346,8 @@
           </div>
 
           <div style="text-align: center; font-size: 0.8em;">
-            <span id="labelPercD2" style="color: var(--azul-ceu); font-weight: 800;">50%</span>
+            <div id="labelPercD2" style="color: var(--azul-ceu); font-weight: 800;">50%</div>
+            <small style="color:#aaa;" id="labelPtsTotaisD2">0 pts</small>
           </div>
         </div>
 
@@ -372,10 +363,13 @@
       <button onclick="mudarJogo(1)" class="btn-secundario" style="flex:1;">Próximo Jogo ⏭</button>
     </div>
 
-    <h3 style="margin-top: 25px;">🏆 Árvore e Chaves do Torneio</h3>
+    <h3 style="margin-top: 25px;">📊 Tabela de Classificação e Desempate</h3>
+    <div id="tabelaClassificacaoContainer"></div>
+
+    <h3 style="margin-top: 25px;">🏆 Árvore do Torneio</h3>
     <div class="arvore-container" id="fluxogramaChaves"></div>
 
-    <h3 style="margin-top: 20px;">Tabela Geral</h3>
+    <h3 style="margin-top: 20px;">Tabela Geral de Jogos</h3>
     <div id="listaDeJogos"></div>
   </div>
 
@@ -384,6 +378,7 @@
     let isAdmin = {{ 'true' if is_admin else 'false' }};
     let currentUser = {{ user|tojson|safe if user else 'null' }};
     let chartInstance = null;
+    let enviandoPonto = false;
 
     let torneio = {
       idDb: null,
@@ -492,11 +487,13 @@
       try {
         const res = await fetch('/api/admins');
         const lista = await res.json();
-
         container.innerHTML = "";
         lista.forEach(adm => {
           const div = document.createElement('div');
           div.className = 'item-admin';
+          div.style.display = 'flex';
+          div.style.justifyContent = 'space-between';
+          div.style.padding = '8px 0';
           div.innerHTML = `
             <span>📧 <b>${adm.email}</b></span>
             ${adm.email.toLowerCase() !== 'rogerriomp@gmail.com' ?
@@ -514,7 +511,6 @@
     async function adicionarAdmin() {
       const emailInput = document.getElementById('novoAdminEmail');
       const email = emailInput.value.trim();
-
       if (!email) return alert("Digite um e-mail!");
 
       try {
@@ -523,30 +519,22 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
         });
-        const data = await res.json();
-
         if (res.ok) {
           emailInput.value = "";
           carregarAdmins();
         } else {
+          const data = await res.json();
           alert(data.error || "Erro ao adicionar administrador.");
         }
-      } catch (e) {
-        alert("Erro na requisição.");
-      }
+      } catch (e) { alert("Erro na requisição."); }
     }
 
     async function removerAdmin(id) {
       if (!confirm("Deseja remover esta permissão de Admin?")) return;
-
       try {
         const res = await fetch(`/api/admins/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-          carregarAdmins();
-        }
-      } catch (e) {
-        alert("Erro ao remover administrador.");
-      }
+        if (res.ok) carregarAdmins();
+      } catch (e) { alert("Erro ao remover administrador."); }
     }
 
     async function carregarTorneioMaisRecente() {
@@ -556,16 +544,8 @@
         if (data && data.jogos) {
           torneio = data;
           renderizarTudo();
-        } else if (isAdmin) {
-          gerarEstruturaTorneio("duas_chaves", [
-            "Latronico / Giovana", "Mauricio / Ana", "Ro / Sabrina", "Guga / Laise",
-            "Miguel / Tia Nita", "Darci / Scheila", "Sergio / Josi", "Ciclano / Fulana"
-          ]);
-          salvarTorneioBackend(true);
         }
-      } catch (e) {
-        console.error("Erro ao carregar dados:", e);
-      }
+      } catch (e) { console.error("Erro ao carregar dados:", e); }
     }
 
     async function carregarHistorico() {
@@ -573,7 +553,6 @@
       try {
         const res = await fetch('/api/historico');
         const lista = await res.json();
-
         if (!Array.isArray(lista) || lista.length === 0) {
           container.innerHTML = "<p>Nenhum torneio passado foi encontrado.</p>";
           return;
@@ -582,22 +561,23 @@
         container.innerHTML = "";
         lista.forEach(t => {
           const div = document.createElement('div');
-          div.className = 'item-historico';
+          div.style.border = "1px solid #e2e8f0";
+          div.style.padding = "10px";
+          div.style.marginBottom = "8px";
+          div.style.borderRadius = "8px";
+          div.style.display = "flex";
+          div.style.justifyContent = "space-between";
           div.innerHTML = `
             <div>
               <b>${t.nome}</b> (${t.categoria})<br>
               <small style="color:#666;">📅 ${t.data || 'Sem data'}</small><br>
-              <small style="color:${t.campeao === 'Torneio Cancelado' ? 'var(--laranja-alerta)' : 'var(--verde-vitoria)'};">
-                🏆 Status/Campeão: <b>${t.campeao}</b>
-              </small>
+              <small>Status/Campeão: <b>${t.campeao}</b></small>
             </div>
             <button onclick="visualizarTorneioAntigo(${t.id})" class="btn-secundario">Visualizar 👁️</button>
           `;
           container.appendChild(div);
         });
-      } catch (e) {
-        container.innerHTML = "<p>Nenhum registro encontrado no histórico.</p>";
-      }
+      } catch (e) { container.innerHTML = "<p>Nenhum registro encontrado.</p>"; }
     }
 
     async function visualizarTorneioAntigo(id) {
@@ -609,34 +589,39 @@
           mudarAba('aovivo');
           renderizarTudo();
         }
-      } catch (e) {
-        alert("Erro ao abrir o torneio selecionado.");
-      }
+      } catch (e) { alert("Erro ao abrir torneio."); }
     }
 
     function renderizarTudo() {
       if (!torneio || !torneio.jogos || torneio.jogos.length === 0) return;
 
+      document.getElementById('displayNomeTorneio').innerText = torneio.nome || "Beach Roça Barba Tênis";
+      document.getElementById('displayCategoria').innerText = torneio.categoria || "Mista";
+      document.getElementById('displayData').innerText = torneio.dataCriacao ? `Criado em: ${torneio.dataCriacao}` : '';
+
       const tagTrans = document.getElementById('tagTransmissao');
       const btnCancel = document.getElementById('btnCancelarTorneio');
       const jogoAtual = torneio.jogos[torneio.jogoAtualIndex];
 
-      // Exibição condicional do botão de cancelamento
+      const estaCancelado = torneio.statusTorneio === 'Cancelado' || torneio.statusTorneio === 'Torneio Cancelado';
+      const estaFinalizado = torneio.statusTorneio === 'Finalizado';
+
       if (btnCancel) {
-        if (isAdmin && torneio.statusTorneio === 'Em Andamento') {
-          btnCancel.style.display = 'inline-block';
-        } else {
-          btnCancel.style.display = 'none';
-        }
+        btnCancel.style.display = (isAdmin && !estaCancelado && !estaFinalizado) ? 'inline-block' : 'none';
       }
 
-      // Atualiza tag do topo dependendo do jogo atual e do status geral
-      const todosFinalizados = torneio.jogos.every(j => j.status === 'finalizado');
-      if (torneio.statusTorneio === 'Torneio Cancelado') {
+      const botoesPonto = document.querySelectorAll('.btn-ponto');
+      if (estaCancelado || estaFinalizado) {
+        botoesPonto.forEach(btn => btn.style.display = 'none');
+      } else if (isAdmin) {
+        botoesPonto.forEach(btn => btn.style.display = 'inline-block');
+      }
+
+      if (estaCancelado) {
         tagTrans.className = 'badge badge-finalizado';
         tagTrans.style.background = '#dc3545';
         tagTrans.innerText = '🚫 CANCELADO';
-      } else if (torneio.statusTorneio === 'Finalizado' || todosFinalizados) {
+      } else if (estaFinalizado) {
         tagTrans.className = 'badge badge-finalizado';
         tagTrans.style.background = '#6c757d';
         tagTrans.innerText = '✓ FINALIZADO';
@@ -657,8 +642,7 @@
     }
 
     async function salvarTorneioBackend(isNovo = false) {
-      if (!isAdmin) return;
-
+      if (!isAdmin) return false;
       try {
         if (isNovo || !torneio.idDb) {
           const res = await fetch('/api/torneio', {
@@ -666,68 +650,43 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(torneio)
           });
-
           const data = await res.json();
-
-          // TRAVA CONTRA DUPLICAÇÃO DE TORNEIO
           if (!res.ok) {
             alert(data.error || "Não foi possível criar o torneio.");
             return false;
           }
-
           torneio.idDb = data.idDb;
           torneio.dataCriacao = data.dataCriacao;
           return true;
         } else {
-          await fetch(`/api/torneio/${torneio.idDb}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(torneio)
-          });
+          socket.emit('atualizar_torneio', torneio);
           return true;
         }
       } catch (e) {
         console.error("Erro ao comunicar com o servidor:", e);
-        alert("Erro de conexão com o servidor.");
         return false;
       }
     }
 
     async function cancelarTorneioAtivo() {
-      if (!torneio || !torneio.idDb) {
-        alert("Nenhum torneio ativo para cancelar.");
-        return;
-      }
-
-      if (!confirm(`Tem certeza que deseja CANCELAR o torneio '${torneio.nome}'?\nEsta ação encerrará o campeonato ativo.`)) {
-        return;
-      }
+      if (!torneio || !torneio.idDb) return alert("Nenhum torneio ativo.");
+      if (!confirm(`Tem certeza que deseja CANCELAR o torneio '${torneio.nome}'?`)) return;
 
       try {
-        const response = await fetch(`/api/torneio/${torneio.idDb}/cancelar`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        const result = await response.json();
-
+        const response = await fetch(`/api/torneio/${torneio.idDb}/cancelar`, { method: 'PUT' });
         if (response.ok) {
-          alert("Torneio cancelado com sucesso!");
-        } else {
-          alert(result.error || "Erro ao cancelar o torneio.");
+          torneio.statusTorneio = 'Cancelado';
+          torneio.campeao = 'Torneio Cancelado';
+          renderizarTudo();
+          alert("Torneio cancelado!");
         }
-      } catch (error) {
-        console.error("Erro ao cancelar torneio:", error);
-        alert("Erro de conexão com o servidor.");
-      }
+      } catch (error) { alert("Erro de conexão."); }
     }
 
     function iniciarNovoCampeonato() {
       if (!isAdmin) return;
       document.getElementById('formCampeonato').classList.remove('escondido');
       document.getElementById('painelTorneio').classList.add('escondido');
-      document.getElementById('painelHistorico').classList.add('escondido');
-      document.getElementById('painelAdmins').classList.add('escondido');
     }
 
     function cancelarCriacao() {
@@ -752,10 +711,7 @@
       const formatoInput = document.getElementById('formatoChaves').value;
       const duplasInputs = Array.from(document.querySelectorAll('.dupla-input')).map(i => i.value.trim()).filter(v => v !== "");
 
-      if (duplasInputs.length < 2) {
-        alert("Digite pelo menos 2 duplas!");
-        return;
-      }
+      if (duplasInputs.length < 2) return alert("Digite pelo menos 2 duplas!");
 
       torneio.idDb = null;
       torneio.nome = nomeInput || "Beach Roça Barba Tênis";
@@ -767,17 +723,10 @@
       gerarEstruturaTorneio(formatoInput, duplasInputs);
 
       const salvou = await salvarTorneioBackend(true);
-      if (!salvou) return; // Interrompe se o backend bloqueou por torneio em andamento
+      if (!salvou) return;
 
       document.getElementById('formCampeonato').classList.add('escondido');
       mudarAba('aovivo');
-
-      if (torneio.categoria === "Mista") {
-        document.getElementById('painelRegras').classList.remove('escondido');
-      } else {
-        document.getElementById('painelRegras').classList.add('escondido');
-      }
-
       renderizarTudo();
     }
 
@@ -789,49 +738,33 @@
         let grupoA = duplas.slice(0, metade);
         let grupoB = duplas.slice(metade);
 
-        let jogosA = [];
+        let jogosA = [], jogosB = [];
         for (let i = 0; i < grupoA.length; i++) {
-          for (let j = i + 1; j < grupoA.length; j++) {
-            jogosA.push({ fase: "Grupo A", d1: grupoA[i], d2: grupoA[j] });
-          }
+          for (let j = i + 1; j < grupoA.length; j++) jogosA.push({ fase: "Grupo A", d1: grupoA[i], d2: grupoA[j] });
         }
-
-        let jogosB = [];
         for (let i = 0; i < grupoB.length; i++) {
-          for (let j = i + 1; j < grupoB.length; j++) {
-            jogosB.push({ fase: "Grupo B", d1: grupoB[i], d2: grupoB[j] });
-          }
+          for (let j = i + 1; j < grupoB.length; j++) jogosB.push({ fase: "Grupo B", d1: grupoB[i], d2: grupoB[j] });
         }
 
         let max = Math.max(jogosA.length, jogosB.length);
-        let jogosIntercalados = [];
+        let jogoId = 1;
 
         for (let k = 0; k < max; k++) {
-          if (jogosA[k]) jogosIntercalados.push(jogosA[k]);
-          if (jogosB[k]) jogosIntercalados.push(jogosB[k]);
+          if (jogosA[k]) torneio.jogos.push(criarObjetoJogo(jogoId++, jogosA[k].fase, jogosA[k].d1, jogosA[k].d2));
+          if (jogosB[k]) torneio.jogos.push(criarObjetoJogo(jogoId++, jogosB[k].fase, jogosB[k].d1, jogosB[k].d2));
         }
-
-        let jogoId = 1;
-        jogosIntercalados.forEach(j => {
-          torneio.jogos.push(criarObjetoJogo(jogoId++, j.fase, j.d1, j.d2));
-        });
 
         torneio.jogos.push(criarObjetoJogo(jogoId++, "Semifinal 1", "1º Grupo A", "2º Grupo B"));
         torneio.jogos.push(criarObjetoJogo(jogoId++, "Semifinal 2", "1º Grupo B", "2º Grupo A"));
         torneio.jogos.push(criarObjetoJogo(jogoId++, "Grande Final", "Vencedor Semi 1", "Vencedor Semi 2"));
 
       } else {
-        let jogosGerais = [];
+        let jogoId = 1;
         for (let i = 0; i < duplas.length; i++) {
           for (let j = i + 1; j < duplas.length; j++) {
-            jogosGerais.push({ fase: "Fase de Grupos", d1: duplas[i], d2: duplas[j] });
+            torneio.jogos.push(criarObjetoJogo(jogoId++, "Fase de Grupos", duplas[i], duplas[j]));
           }
         }
-
-        let jogoId = 1;
-        jogosGerais.forEach(j => {
-          torneio.jogos.push(criarObjetoJogo(jogoId++, j.fase, j.d1, j.d2));
-        });
       }
     }
 
@@ -842,226 +775,228 @@
         d1: { nome: d1, pontos: 0, sets: 0, historico: [] },
         d2: { nome: d2, pontos: 0, sets: 0, historico: [] },
         status: "pendente",
-        vencedor: null,
-        obsDesempate: ""
+        vencedor: null
       };
-    }
-
-    function atualizarClassificacaoESemifinais() {
-      if (torneio.formato !== "duas_chaves") return;
-
-      const calcularClassificacaoGrupo = (faseNome) => {
-        let stats = {};
-        let jogosGrupo = torneio.jogos.filter(j => j.fase === faseNome);
-
-        jogosGrupo.forEach(j => {
-          [j.d1, j.d2].forEach(dupla => {
-            if (!stats[dupla.nome]) {
-              stats[dupla.nome] = { nome: dupla.nome, vitorias: 0, setsPro: 0, pontosPro: 0, pontosContra: 0 };
-            }
-          });
-
-          if (j.status === "finalizado") {
-            if (j.d1.sets > j.d2.sets) stats[j.d1.nome].vitorias++;
-            if (j.d2.sets > j.d1.sets) stats[j.d2.nome].vitorias++;
-
-            stats[j.d1.nome].setsPro += j.d1.sets;
-            stats[j.d2.nome].setsPro += j.d2.sets;
-
-            let pts1 = j.d1.historico.reduce((a, b) => a + b, 0);
-            let pts2 = j.d2.historico.reduce((a, b) => a + b, 0);
-
-            stats[j.d1.nome].pontosPro += pts1;
-            stats[j.d1.nome].pontosContra += pts2;
-
-            stats[j.d2.nome].pontosPro += pts2;
-            stats[j.d2.nome].pontosContra += pts1;
-          }
-        });
-
-        let lista = Object.values(stats).map(item => {
-          let totalPontos = item.pontosPro + item.pontosContra;
-          item.aproveitamento = totalPontos > 0 ? (item.pontosPro / totalPontos) : 0;
-          return item;
-        });
-
-        lista.sort((a, b) => {
-          if (b.vitorias !== a.vitorias) return b.vitorias - a.vitorias;
-          if (b.setsPro !== a.setsPro) return b.setsPro - a.setsPro;
-          return b.aproveitamento - a.aproveitamento;
-        });
-
-        let desempateAprov = false;
-        let empateTotal = false;
-
-        if (lista.length >= 2) {
-          if (lista[0].vitorias === lista[1].vitorias && lista[0].setsPro === lista[1].setsPro) {
-            if (lista[0].aproveitamento > lista[1].aproveitamento) {
-              desempateAprov = true;
-            } else if (lista[0].aproveitamento === lista[1].aproveitamento && lista[0].vitorias > 0) {
-              empateTotal = true;
-            }
-          }
-        }
-
-        return { ranking: lista, desempateAprov, empateTotal };
-      };
-
-      let resA = calcularClassificacaoGrupo("Grupo A");
-      let resB = calcularClassificacaoGrupo("Grupo B");
-
-      let semi1 = torneio.jogos.find(j => j.fase === "Semifinal 1");
-      let semi2 = torneio.jogos.find(j => j.fase === "Semifinal 2");
-
-      if (semi1 && resA.ranking[0]) semi1.d1.nome = resA.ranking[0].nome;
-      if (semi1 && resB.ranking[1]) semi1.d2.nome = resB.ranking[1].nome;
-
-      if (semi2 && resB.ranking[0]) semi2.d1.nome = resB.ranking[0].nome;
-      if (semi2 && resA.ranking[1]) semi2.d2.nome = resA.ranking[1].nome;
-
-      if (semi1) {
-        if (resA.empateTotal || resB.empateTotal) {
-          semi1.obsDesempate = "⚠️ Empate Absoluto! Sugerido Jogo Extra de Desempate.";
-        } else if (resA.desempateAprov || resB.desempateAprov) {
-          semi1.obsDesempate = "*Classificado por critério de Desempate (Aproveitamento)";
-        } else {
-          semi1.obsDesempate = "";
-        }
-      }
-
-      if (semi2) {
-        if (resA.empateTotal || resB.empateTotal) {
-          semi2.obsDesempate = "⚠️ Empate Absoluto! Sugerido Jogo Extra de Desempate.";
-        } else if (resA.desempateAprov || resB.desempateAprov) {
-          semi2.obsDesempate = "*Classificado por critério de Desempate (Aproveitamento)";
-        } else {
-          semi2.obsDesempate = "";
-        }
-      }
-    }
-
-    function calcularPorcentagemJogo(j) {
-      let t1 = j.d1.pontos + j.d1.historico.reduce((a, b) => a + b, 0);
-      let t2 = j.d2.pontos + j.d2.historico.reduce((a, b) => a + b, 0);
-      let soma = t1 + t2;
-
-      if (soma === 0) return { p1: 50, p2: 50, soma: 0 };
-      let p1 = Math.round((t1 / soma) * 100);
-      return { p1: p1, p2: 100 - p1, soma: soma };
-    }
-
-    function inicializarGrafico() {
-      const canvas = document.getElementById('chartAproveitamento');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      chartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Dupla 1', 'Dupla 2'],
-          datasets: [{
-            data: [50, 50],
-            backgroundColor: ['#f8b319', '#0076be'],
-            borderWidth: 2,
-            borderColor: '#2b1e16'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { enabled: false } },
-          cutout: '70%'
-        }
-      });
-    }
-
-    function atualizarAproveitamento(jogo) {
-      let calc = calcularPorcentagemJogo(jogo);
-
-      document.getElementById('labelPercD1').innerText = `${calc.p1}%`;
-      document.getElementById('labelPercD2').innerText = `${calc.p2}%`;
-
-      document.getElementById('barraD1').style.width = `${calc.p1}%`;
-      document.getElementById('barraD2').style.width = `${calc.p2}%`;
-
-      if (chartInstance) {
-        chartInstance.data.datasets[0].data = [calc.soma === 0 ? 50 : calc.p1, calc.soma === 0 ? 50 : calc.p2];
-        chartInstance.update();
-      }
     }
 
     function carregarJogoAtual() {
       const jogo = torneio.jogos[torneio.jogoAtualIndex];
       if (!jogo) return;
 
-      document.getElementById('displayNomeTorneio').innerText = torneio.nome;
-      document.getElementById('displayCategoria').innerText = torneio.categoria;
-      document.getElementById('displayData').innerText = torneio.dataCriacao ? `📅 ${torneio.dataCriacao}` : '';
-      document.getElementById('displayGrupoAtual').innerText = jogo.fase;
-      document.getElementById('displayRodadaAtual').innerText = `Jogo ${jogo.id}`;
+      document.getElementById('displayGrupoAtual').innerText = jogo.fase.toUpperCase();
+      document.getElementById('displayRodadaAtual').innerText = `Jogo ${jogo.id} de ${torneio.jogos.length}`;
 
       document.getElementById('d1Nome').innerText = jogo.d1.nome;
       document.getElementById('d1Pontos').innerText = jogo.d1.pontos;
       document.getElementById('d1Sets').innerText = jogo.d1.sets;
-      document.getElementById('d1Historico').innerText = jogo.d1.historico.length > 0 ? `(${jogo.d1.historico.join(', ')})` : '';
 
       document.getElementById('d2Nome').innerText = jogo.d2.nome;
       document.getElementById('d2Pontos').innerText = jogo.d2.pontos;
       document.getElementById('d2Sets').innerText = jogo.d2.sets;
-      document.getElementById('d2Historico').innerText = jogo.d2.historico.length > 0 ? `(${jogo.d2.historico.join(', ')})` : '';
 
-      atualizarAproveitamento(jogo);
+      // Monta exibições detalhadas por set, ex: Sets: 1 (10-8, 8-10)
+      let historicoD1Str = "";
+      let historicoD2Str = "";
+      if (jogo.d1.historico.length > 0) {
+        historicoD1Str = "(" + jogo.d1.historico.map((pts, idx) => `${pts}-${jogo.d2.historico[idx]}`).join(', ') + ")";
+        historicoD2Str = "(" + jogo.d2.historico.map((pts, idx) => `${pts}-${jogo.d1.historico[idx]}`).join(', ') + ")";
+      }
+
+      document.getElementById('d1Historico').innerText = historicoD1Str;
+      document.getElementById('d2Historico').innerText = historicoD2Str;
+
+      // Soma total de pontos acumulados na partida atual
+      let ptsTotaisD1 = jogo.d1.historico.reduce((a,b)=>a+b, 0) + jogo.d1.pontos;
+      let ptsTotaisD2 = jogo.d2.historico.reduce((a,b)=>a+b, 0) + jogo.d2.pontos;
+
+      document.getElementById('labelPtsTotaisD1').innerText = `${ptsTotaisD1} pts totais`;
+      document.getElementById('labelPtsTotaisD2').innerText = `${ptsTotaisD2} pts totais`;
+
+      atualizarGrafico(ptsTotaisD1, ptsTotaisD2);
     }
 
-    function alterarPontos(dupla, delta) {
-      if (!isAdmin) return;
+    // ALTERAÇÃO DA REGRA: MELHOR DE 3 SETS (10 PONTOS CADA COM DIFERENÇA DE 2)
+    function alterarPontos(duplaNum, delta) {
+      if (!isAdmin || enviandoPonto) return;
+      if (torneio.statusTorneio === 'Cancelado' || torneio.statusTorneio === 'Torneio Cancelado' || torneio.statusTorneio === 'Finalizado') return;
+
       const jogo = torneio.jogos[torneio.jogoAtualIndex];
-      if (jogo.status === "finalizado" && delta > 0) return;
+      if (!jogo || jogo.status === 'finalizado') return;
 
-      const d = dupla === 1 ? jogo.d1 : jogo.d2;
-      d.pontos = Math.max(0, d.pontos + delta);
+      enviandoPonto = true;
+      setTimeout(() => { enviandoPonto = false; }, 150);
 
-      const p1 = jogo.d1.pontos;
-      const p2 = jogo.d2.pontos;
+      const d = duplaNum === 1 ? jogo.d1 : jogo.d2;
+      const dOposta = duplaNum === 1 ? jogo.d2 : jogo.d1;
 
-      if ((p1 >= 10 && (p1 - p2) >= 2) || (p2 >= 10 && (p2 - p1) >= 2)) {
-        jogo.d1.historico.push(p1);
-        jogo.d2.historico.push(p2);
+      d.pontos += delta;
+      if (d.pontos < 0) d.pontos = 0;
 
-        if (p1 > p2) {
-          jogo.d1.sets++;
-        } else {
-          jogo.d2.sets++;
-        }
+      // Regra de Vitoria no SET: Atinge 10 pontos e tem pelo menos 2 pontos de vantagem
+      if (d.pontos >= 10 && (d.pontos - dOposta.pontos) >= 2) {
+        d.sets += 1;
 
+        // Armazena no histórico os pontos do set que acabou de ser encerrado
+        jogo.d1.historico.push(jogo.d1.pontos);
+        jogo.d2.historico.push(jogo.d2.pontos);
+
+        // Zera os pontos correntes para o próximo set
         jogo.d1.pontos = 0;
         jogo.d2.pontos = 0;
-      }
 
-      if (jogo.d1.sets === 2 || jogo.d2.sets === 2) {
-        jogo.status = "finalizado";
-        jogo.vencedor = jogo.d1.sets === 2 ? jogo.d1.nome : jogo.d2.nome;
-
-        if (jogo.fase === "Semifinal 1" || jogo.fase === "Semifinal 2") {
-          let final = torneio.jogos.find(j => j.fase === "Grande Final");
-          if (final) {
-            if (jogo.fase === "Semifinal 1") final.d1.nome = jogo.vencedor;
-            if (jogo.fase === "Semifinal 2") final.d2.nome = jogo.vencedor;
-          }
+        // Regra de Vitoria na PARTIDA: Quem vencer 2 sets primeiro ganha
+        if (d.sets === 2) {
+          jogo.status = 'finalizado';
+          jogo.vencedor = d.nome;
         }
       }
 
-      atualizarClassificacaoESemifinais();
       renderizarTudo();
-      salvarTorneioBackend();
+      salvarTorneioBackend(false);
     }
 
     function mudarJogo(delta) {
       if (!isAdmin) return;
-      const novoIndex = torneio.jogoAtualIndex + delta;
+      let novoIndex = torneio.jogoAtualIndex + delta;
       if (novoIndex >= 0 && novoIndex < torneio.jogos.length) {
         torneio.jogoAtualIndex = novoIndex;
         renderizarTudo();
-        salvarTorneioBackend();
+        salvarTorneioBackend(false);
+      }
+    }
+
+    function atualizarClassificacaoESemifinais() {
+      let tabela = {};
+
+      torneio.jogos.forEach(j => {
+        if ((j.fase === 'Grupo A' || j.fase === 'Grupo B' || j.fase === 'Fase de Grupos') && j.status === 'finalizado') {
+          if (!tabela[j.d1.nome]) tabela[j.d1.nome] = { nome: j.d1.nome, v: 0, grupo: j.fase, setsGanhos: 0, setsPerdidos: 0, ptsPro: 0, ptsContra: 0 };
+          if (!tabela[j.d2.nome]) tabela[j.d2.nome] = { nome: j.d2.nome, v: 0, grupo: j.fase, setsGanhos: 0, setsPerdidos: 0, ptsPro: 0, ptsContra: 0 };
+
+          if (j.vencedor === j.d1.nome) tabela[j.d1.nome].v += 1;
+          if (j.vencedor === j.d2.nome) tabela[j.d2.nome].v += 1;
+
+          tabela[j.d1.nome].setsGanhos += j.d1.sets;
+          tabela[j.d1.nome].setsPerdidos += j.d2.sets;
+          tabela[j.d2.nome].setsGanhos += j.d2.sets;
+          tabela[j.d2.nome].setsPerdidos += j.d1.sets;
+
+          let sumD1 = j.d1.historico.reduce((a,b)=>a+b, 0);
+          let sumD2 = j.d2.historico.reduce((a,b)=>a+b, 0);
+
+          tabela[j.d1.nome].ptsPro += sumD1;
+          tabela[j.d1.nome].ptsContra += sumD2;
+          tabela[j.d2.nome].ptsPro += sumD2;
+          tabela[j.d2.nome].ptsContra += sumD1;
+        }
+      });
+
+      // Função de ordenação aplicando os critérios:
+      // 1. Vitórias | 2. Saldo de Sets | 3. Aproveitamento % de Pontos (ptsPro / totalPts)
+      const ordenarFn = (a, b) => {
+        if (b.v !== a.v) return b.v - a.v;
+        let saldoSetsA = a.setsGanhos - a.setsPerdidos;
+        let saldoSetsB = b.setsGanhos - b.setsPerdidos;
+        if (saldoSetsB !== saldoSetsA) return saldoSetsB - saldoSetsA;
+
+        let totalPtsA = a.ptsPro + a.ptsContra;
+        let totalPtsB = b.ptsPro + b.ptsContra;
+        let aproveitamentoA = totalPtsA > 0 ? (a.ptsPro / totalPtsA) : 0;
+        let aproveitamentoB = totalPtsB > 0 ? (b.ptsPro / totalPtsB) : 0;
+
+        return aproveitamentoB - aproveitamentoA;
+      };
+
+      let grupoA = Object.values(tabela).filter(x => x.grupo === 'Grupo A').sort(ordenarFn);
+      let grupoB = Object.values(tabela).filter(x => x.grupo === 'Grupo B').sort(ordenarFn);
+
+      // Renderiza as tabelas de classificação
+      renderizarTabelaClassificacao(grupoA, grupoB);
+
+      // Atualização dos cruzamentos de semifinal
+      if (torneio.formato === "duas_chaves") {
+        let semi1 = torneio.jogos.find(j => j.fase === 'Semifinal 1');
+        let semi2 = torneio.jogos.find(j => j.fase === 'Semifinal 2');
+
+        if (semi1 && grupoA[0] && grupoB[1]) {
+          semi1.d1.nome = grupoA[0].nome;
+          semi1.d2.nome = grupoB[1].nome;
+        }
+        if (semi2 && grupoB[0] && grupoA[1]) {
+          semi2.d1.nome = grupoB[0].nome;
+          semi2.d2.nome = grupoA[1].nome;
+        }
+
+        let final = torneio.jogos.find(j => j.fase === 'Grande Final');
+        if (final) {
+          if (semi1 && semi1.vencedor) final.d1.nome = semi1.vencedor;
+          if (semi2 && semi2.vencedor) final.d2.nome = semi2.vencedor;
+        }
+      }
+    }
+
+    function renderizarTabelaClassificacao(grupoA, grupoB) {
+      const container = document.getElementById('tabelaClassificacaoContainer');
+      const boxAlerta = document.getElementById('alertaDesempateExtra');
+      container.innerHTML = "";
+      boxAlerta.classList.add('escondido');
+
+      let desempateSugestao = [];
+
+      const renderGrupo = (nome, lista) => {
+        if (lista.length === 0) return;
+
+        // Verifica se há empate completo nos 3 critérios para sugerir jogo extra
+        for (let i = 0; i < lista.length - 1; i++) {
+          let t1 = lista[i];
+          let t2 = lista[i+1];
+          let saldoA = t1.setsGanhos - t1.setsPerdidos;
+          let saldoB = t2.setsGanhos - t2.setsPerdidos;
+          let a1 = (t1.ptsPro + t1.ptsContra) > 0 ? (t1.ptsPro / (t1.ptsPro + t1.ptsContra)) : 0;
+          let a2 = (t2.ptsPro + t2.ptsContra) > 0 ? (t2.ptsPro / (t2.ptsPro + t2.ptsContra)) : 0;
+
+          if (t1.v === t2.v && saldoA === saldoB && Math.abs(a1 - a2) < 0.001) {
+            desempateSugestao.push(`⚡ <b>${nome}:</b> Empate técnico absoluto entre <b>${t1.nome}</b> e <b>${t2.nome}</b>. Sugerido um jogo extra de desempate!`);
+          }
+        }
+
+        let html = `<h4>${nome}</h4><table class="tabela-classificacao">
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Dupla</th>
+              <th>Vit</th>
+              <th>Sets (S/P)</th>
+              <th>Pontos (P/C)</th>
+              <th>Aprov (%)</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        lista.forEach((item, index) => {
+          let total = item.ptsPro + item.ptsContra;
+          let aprov = total > 0 ? Math.round((item.ptsPro / total) * 100) : 0;
+          html += `
+            <tr>
+              <td><b>${index + 1}º</b></td>
+              <td style="text-align:left;"><b>${item.nome}</b></td>
+              <td>${item.v}</td>
+              <td>${item.setsGanhos}/${item.setsPerdidos}</td>
+              <td>${item.ptsPro}/${item.ptsContra}</td>
+              <td><b>${aprov}%</b></td>
+            </tr>
+          `;
+        });
+        html += `</tbody></table>`;
+        container.innerHTML += html;
+      };
+
+      renderGrupo("Grupo A", grupoA);
+      renderGrupo("Grupo B", grupoB);
+
+      if (desempateSugestao.length > 0) {
+        boxAlerta.innerHTML = desempateSugestao.join('<br>');
+        boxAlerta.classList.remove('escondido');
       }
     }
 
@@ -1069,48 +1004,38 @@
       const container = document.getElementById('fluxogramaChaves');
       container.innerHTML = "";
 
-      const fasesMap = {};
-      torneio.jogos.forEach(j => {
-        if (!fasesMap[j.fase]) fasesMap[j.fase] = [];
-        fasesMap[j.fase].push(j);
-      });
-
-      Object.keys(fasesMap).forEach(faseNome => {
-        let col = document.createElement('div');
+      let fases = [...new Set(torneio.jogos.map(j => j.fase))];
+      fases.forEach(fase => {
+        const col = document.createElement('div');
         col.className = 'fase-coluna';
-        col.innerHTML = `<div class="fase-titulo">${faseNome}</div>`;
 
-        fasesMap[faseNome].forEach(j => {
-          let h1Text = j.d1.historico.length > 0 ? `(${j.d1.historico.join(',')})` : '';
-          let h2Text = j.d2.historico.length > 0 ? `(${j.d2.historico.join(',')})` : '';
-          let calc = calcularPorcentagemJogo(j);
+        const title = document.createElement('div');
+        title.className = 'fase-titulo';
+        title.innerText = fase;
+        col.appendChild(title);
 
-          let htmlObs = j.obsDesempate ? `<div class="obs-desempate">${j.obsDesempate}</div>` : '';
+        let jogosDaFase = torneio.jogos.filter(j => j.fase === fase);
+        jogosDaFase.forEach(j => {
+          const match = document.createElement('div');
+          match.className = 'match-box';
 
-          col.innerHTML += `
-            <div class="match-box">
-              <div class="match-dupla ${j.vencedor === j.d1.nome ? 'vencedor' : ''}">
-                <span>${j.d1.nome}</span>
-                <span><b>${j.d1.sets}</b> <small style="font-size:0.85em;">${h1Text}</small></span>
-              </div>
-              <div class="match-dupla ${j.vencedor === j.d2.nome ? 'vencedor' : ''}">
-                <span>${j.d2.nome}</span>
-                <span><b>${j.d2.sets}</b> <small style="font-size:0.85em;">${h2Text}</small></span>
-              </div>
+          const d1Class = j.vencedor === j.d1.nome ? 'match-dupla vencedor' : 'match-dupla';
+          const d2Class = j.vencedor === j.d2.nome ? 'match-dupla vencedor' : 'match-dupla';
 
-              <div class="mini-barra-box">
-                <div class="mini-barra-label">
-                  <span>Aprov.</span>
-                  <span>${calc.p1}% - ${calc.p2}%</span>
-                </div>
-                <div class="mini-barra">
-                  <div class="mini-barra-d1" style="width: ${calc.p1}%;"></div>
-                  <div class="mini-barra-d2" style="width: ${calc.p2}%;"></div>
-                </div>
-              </div>
-              ${htmlObs}
+          let h1 = j.d1.historico.length ? ` (${j.d1.historico.join(',')})` : '';
+          let h2 = j.d2.historico.length ? ` (${j.d2.historico.join(',')})` : '';
+
+          match.innerHTML = `
+            <div class="${d1Class}">
+              <span>${j.d1.nome}</span>
+              <b>${j.d1.sets} set(s)${h1}</b>
+            </div>
+            <div class="${d2Class}">
+              <span>${j.d2.nome}</span>
+              <b>${j.d2.sets} set(s)${h2}</b>
             </div>
           `;
+          col.appendChild(match);
         });
 
         container.appendChild(col);
@@ -1121,46 +1046,71 @@
       const container = document.getElementById('listaDeJogos');
       container.innerHTML = "";
 
-      torneio.jogos.forEach((j, index) => {
+      torneio.jogos.forEach((j, idx) => {
         const item = document.createElement('div');
         item.className = 'item-jogo';
+        const isAtual = idx === torneio.jogoAtualIndex;
+        item.style.borderLeft = isAtual ? '4px solid var(--amarelo-roca)' : '1px solid #cbd5e1';
+        item.style.background = isAtual ? '#fffbeb' : '#fff';
 
-        let statusBadge = `<span class="badge">${j.status}</span>`;
-        if (index === torneio.jogoAtualIndex && j.status !== "finalizado") {
-          statusBadge = `<span class="badge badge-aovivo">AO VIVO</span>`;
-        } else if (j.status === "finalizado") {
-          statusBadge = `<span class="badge" style="background:var(--azul-ceu); color:white;">FIM</span>`;
+        let histStr = "";
+        if (j.d1.historico.length > 0) {
+          histStr = " — Placar: " + j.d1.historico.map((pts, i) => `[${pts}-${j.d2.historico[i]}]`).join(' ');
         }
 
-        let h1Text = j.d1.historico.length > 0 ? ` (${j.d1.historico.join(',')})` : '';
-        let h2Text = j.d2.historico.length > 0 ? ` (${j.d2.historico.join(',')})` : '';
-        let calc = calcularPorcentagemJogo(j);
-
         item.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <small style="color:#666;"><b>[${j.fase}]</b> - Jogo ${j.id}</small><br>
-              <b>${j.d1.nome}</b> (${j.d1.sets}${h1Text}) vs <b>${j.d2.nome}</b> (${j.d2.sets}${h2Text})
-            </div>
-            <div>${statusBadge}</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <small style="font-weight:bold; color:var(--azul-ceu);">${j.fase} - Jogo ${j.id}</small>
+            <span class="badge ${j.status === 'finalizado' ? 'badge-finalizado' : (isAtual ? 'badge-aovivo' : '')}">
+              ${j.status === 'finalizado' ? 'FIM' : (isAtual ? 'JOGANDO' : 'AGUARDANDO')}
+            </span>
           </div>
-
-          <div class="mini-barra-box">
-            <div class="mini-barra-label">
-              <span>Aproveitamento da Partida</span>
-              <span>${calc.p1}% - ${calc.p2}%</span>
-            </div>
-            <div class="mini-barra">
-              <div class="mini-barra-d1" style="width: ${calc.p1}%;"></div>
-              <div class="mini-barra-d2" style="width: ${calc.p2}%;"></div>
-            </div>
+          <div>
+            <b>${j.d1.nome}</b> (${j.d1.sets}) vs <b>${j.d2.nome}</b> (${j.d2.sets}) <small style="color:#059669; font-weight:bold;">${histStr}</small>
           </div>
         `;
         container.appendChild(item);
       });
     }
 
-    window.addEventListener('DOMContentLoaded', inicializar);
+    function inicializarGrafico() {
+      const ctx = document.getElementById('chartAproveitamento').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Dupla 1', 'Dupla 2'],
+          datasets: [{
+            data: [50, 50],
+            backgroundColor: ['#f8b319', '#0076be'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          cutout: '70%'
+        }
+      });
+    }
+
+    function atualizarGrafico(p1, p2) {
+      if (!chartInstance) return;
+
+      let total = p1 + p2;
+      let perc1 = total === 0 ? 50 : Math.round((p1 / total) * 100);
+      let perc2 = total === 0 ? 50 : 100 - perc1;
+
+      chartInstance.data.datasets[0].data = [perc1, perc2];
+      chartInstance.update();
+
+      document.getElementById('labelPercD1').innerText = `${perc1}%`;
+      document.getElementById('labelPercD2').innerText = `${perc2}%`;
+      document.getElementById('barraD1').style.width = `${perc1}%`;
+      document.getElementById('barraD2').style.width = `${perc2}%`;
+    }
+
+    window.onload = inicializar;
   </script>
 </body>
 </html>
